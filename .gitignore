@@ -1,0 +1,135 @@
+# =========================================================
+# Sistema / IDE
+# =========================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+logs/
+*.pid
+*.seed
+*.pid.lock
+
+# =========================================================
+# C# (.NET / Unity)
+# =========================================================
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ww]eb[Rr]eleaser/
+[Rr]eleases/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+*.userprefs
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+.vs/
+.vsconfig
+*.user
+.idea/
+
+# Unity
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]serSettings/
+[Mm]emoryCaptures/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# =========================================================
+# Flutter / Dart
+# =========================================================
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.flutter_plugins
+.pub-cache/
+.pub/
+pubspec.lock.bak
+.dart_tool/
+.flutter-plugins-dependencies
+coverage/
+*.iml
+.gradle/
+local.properties
+GeneratedPluginRegistrant.java
+
+# =========================================================
+# Angular
+# =========================================================
+.angular/
+dist/
+out-tsc/
+bazel-out/
+tmp/
+
+# =========================================================
+# Node.js (possível backend/frontend JS/TS)
+# =========================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.tgz
+.env
+.env.local
+.env.*.local
+
+# =========================================================
+# Graphify (grafo de conhecimento gerado)
+# =========================================================
+graphify-out/
+.graphify_*
+
+# =========================================================
+# Python (possível tooling de build/game server)
+# =========================================================
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.coverage
+
+# =========================================================
+# Docker
+# =========================================================
+docker-compose.override.yml
+*.db
+*.sqlite
+*.sqlite3
