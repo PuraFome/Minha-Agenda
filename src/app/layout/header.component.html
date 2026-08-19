@@ -4,6 +4,12 @@
     <span class="brand__name">Minha Agenda</span>
   </a>
 
+  <nav class="nav" aria-label="Navegação principal">
+    <a class="nav__link" routerLink="/" routerLinkActive="nav__link--active" [routerLinkActiveOptions]="{ exact: true }">Mural</a>
+    <a class="nav__link" routerLink="/nova-missao" routerLinkActive="nav__link--active">Nova Missão</a>
+    <a class="nav__link" routerLink="/perfil" routerLinkActive="nav__link--active">Perfil</a>
+  </nav>
+
   <button
     type="button"
     class="theme-toggle"

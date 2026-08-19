@@ -16,12 +16,13 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render header, router outlet and footer', async () => {
+  it('should render header, router outlet, footer and level-up', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('app-header')).toBeTruthy();
     expect(compiled.querySelector('router-outlet')).toBeTruthy();
     expect(compiled.querySelector('app-footer')).toBeTruthy();
+    expect(compiled.querySelector('app-level-up')).toBeTruthy();
   });
 });
