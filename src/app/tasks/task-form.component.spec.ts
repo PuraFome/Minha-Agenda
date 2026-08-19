@@ -1,20 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TaskFormComponent } from './task-form.component';
-import { TaskService } from '../game/task.service';
-import { Task } from '../game/game.types';
+import { MissionService } from '../game/mission.service';
+import { Mission } from '../game/game.types';
 import { vi } from 'vitest';
 
 describe('TaskFormComponent', () => {
   let component: TaskFormComponent;
   let fixture: ComponentFixture<TaskFormComponent>;
-  let taskServiceSpy: {
-    addTask: ReturnType<typeof vi.fn>;
-    editTask: ReturnType<typeof vi.fn>;
+  let missionServiceSpy: {
+    addMission: ReturnType<typeof vi.fn>;
+    editMission: ReturnType<typeof vi.fn>;
   };
 
-  const existingTask: Task = {
-    id: 'task-1',
-    title: 'Existing task',
+  const existingMission: Mission = {
+    id: 'mission-1',
+    title: 'Existing mission',
     difficulty: 'dificil',
     dueDate: '2026-08-20',
     completed: false,
@@ -22,14 +22,14 @@ describe('TaskFormComponent', () => {
   };
 
   beforeEach(async () => {
-    taskServiceSpy = {
-      addTask: vi.fn(),
-      editTask: vi.fn(),
+    missionServiceSpy = {
+      addMission: vi.fn(),
+      editMission: vi.fn(),
     };
 
     await TestBed.configureTestingModule({
       imports: [TaskFormComponent],
-      providers: [{ provide: TaskService, useValue: taskServiceSpy }],
+      providers: [{ provide: MissionService, useValue: missionServiceSpy }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(TaskFormComponent);
@@ -115,7 +115,7 @@ describe('TaskFormComponent', () => {
     expect(select.selectedIndex).toBe(1);
   });
 
-  it('should call addTask with title, difficulty and dueDate on submit', () => {
+  it('should call addMission with title, difficulty and dueDate on submit', () => {
     component.title.set('New task');
     component.difficulty.set('media');
     component.dueDate.set('2026-08-25');
@@ -126,10 +126,10 @@ describe('TaskFormComponent', () => {
     ) as HTMLButtonElement;
     submitBtn.click();
 
-    expect(taskServiceSpy.addTask).toHaveBeenCalledWith('New task', 'media', '2026-08-25');
+    expect(missionServiceSpy.addMission).toHaveBeenCalledWith('New task', 'media', '2026-08-25');
   });
 
-  it('should call addTask with null dueDate when date is empty', () => {
+  it('should call addMission with null dueDate when date is empty', () => {
     component.title.set('No date task');
     fixture.detectChanges();
 
@@ -138,16 +138,16 @@ describe('TaskFormComponent', () => {
     ) as HTMLButtonElement;
     submitBtn.click();
 
-    expect(taskServiceSpy.addTask).toHaveBeenCalledWith('No date task', 'facil', null);
+    expect(missionServiceSpy.addMission).toHaveBeenCalledWith('No date task', 'facil', null);
   });
 
-  it('should not call addTask when title is empty', () => {
+  it('should not call addMission when title is empty', () => {
     const submitBtn = fixture.nativeElement.querySelector(
       'button[type="submit"]',
     ) as HTMLButtonElement;
     submitBtn.click();
 
-    expect(taskServiceSpy.addTask).not.toHaveBeenCalled();
+    expect(missionServiceSpy.addMission).not.toHaveBeenCalled();
   });
 
   it('should emit saved after submit', () => {
@@ -165,7 +165,7 @@ describe('TaskFormComponent', () => {
   });
 
   it('should pre-fill fields from task in edit mode', () => {
-    fixture.componentRef.setInput('task', existingTask);
+    fixture.componentRef.setInput('task', existingMission);
     fixture.detectChanges();
 
     expect(component.isEditing()).toBe(true);
@@ -175,7 +175,7 @@ describe('TaskFormComponent', () => {
   });
 
   it('should show edit submit label in edit mode', () => {
-    fixture.componentRef.setInput('task', existingTask);
+    fixture.componentRef.setInput('task', existingMission);
     fixture.detectChanges();
 
     const submitBtn = fixture.nativeElement.querySelector(
@@ -184,8 +184,8 @@ describe('TaskFormComponent', () => {
     expect(submitBtn.textContent).toContain('Salvar alterações');
   });
 
-  it('should call editTask with id and updates on submit in edit mode', () => {
-    fixture.componentRef.setInput('task', existingTask);
+  it('should call editMission with id and updates on submit in edit mode', () => {
+    fixture.componentRef.setInput('task', existingMission);
     fixture.detectChanges();
 
     component.title.set('Updated title');
@@ -198,11 +198,11 @@ describe('TaskFormComponent', () => {
     ) as HTMLButtonElement;
     submitBtn.click();
 
-    expect(taskServiceSpy.editTask).toHaveBeenCalledWith('task-1', {
+    expect(missionServiceSpy.editMission).toHaveBeenCalledWith('mission-1', {
       title: 'Updated title',
       difficulty: 'epica',
       dueDate: '2026-09-01',
     });
-    expect(taskServiceSpy.addTask).not.toHaveBeenCalled();
+    expect(missionServiceSpy.addMission).not.toHaveBeenCalled();
   });
 });

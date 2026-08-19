@@ -2,25 +2,25 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { TaskListComponent } from './task-list.component';
 import { TaskFormComponent } from './task-form.component';
-import { TaskService, PendingTaskRow } from '../game/task.service';
-import { Task } from '../game/game.types';
+import { MissionService, PendingMissionRow } from '../game/mission.service';
+import { Mission } from '../game/game.types';
 import { signal } from '@angular/core';
 import { vi } from 'vitest';
 
 describe('TaskListComponent', () => {
   let component: TaskListComponent;
   let fixture: ComponentFixture<TaskListComponent>;
-  let taskServiceSpy: {
-    addTask: ReturnType<typeof vi.fn>;
-    editTask: ReturnType<typeof vi.fn>;
-    completeTask: ReturnType<typeof vi.fn>;
-    undoComplete: ReturnType<typeof vi.fn>;
-    deleteTask: ReturnType<typeof vi.fn>;
+  let missionServiceSpy: {
+    addMission: ReturnType<typeof vi.fn>;
+    editMission: ReturnType<typeof vi.fn>;
+    completeMission: ReturnType<typeof vi.fn>;
+    undoCompleteMission: ReturnType<typeof vi.fn>;
+    deleteMission: ReturnType<typeof vi.fn>;
     pendingTasks: ReturnType<typeof signal>;
     completedTasks: ReturnType<typeof signal>;
   };
 
-  const pendingRows: PendingTaskRow[] = [
+  const pendingRows: PendingMissionRow[] = [
     {
       task: {
         id: 'p1',
@@ -56,7 +56,7 @@ describe('TaskListComponent', () => {
     },
   ];
 
-  const completedTasks: Task[] = [
+  const completedTasks: Mission[] = [
     {
       id: 'c1',
       title: 'Done task',
@@ -68,19 +68,19 @@ describe('TaskListComponent', () => {
   ];
 
   beforeEach(async () => {
-    taskServiceSpy = {
-      addTask: vi.fn(),
-      editTask: vi.fn(),
-      completeTask: vi.fn(),
-      undoComplete: vi.fn(),
-      deleteTask: vi.fn(),
+    missionServiceSpy = {
+      addMission: vi.fn(),
+      editMission: vi.fn(),
+      completeMission: vi.fn(),
+      undoCompleteMission: vi.fn(),
+      deleteMission: vi.fn(),
       pendingTasks: signal(pendingRows),
       completedTasks: signal(completedTasks),
     };
 
     await TestBed.configureTestingModule({
       imports: [TaskListComponent],
-      providers: [{ provide: TaskService, useValue: taskServiceSpy }],
+      providers: [{ provide: MissionService, useValue: missionServiceSpy }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(TaskListComponent);
@@ -145,30 +145,30 @@ describe('TaskListComponent', () => {
     expect(compiled.textContent).toContain('01/09/2026');
   });
 
-  it('should call completeTask when complete button clicked', () => {
+  it('should call completeMission when complete button clicked', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const completeBtn = compiled.querySelector(
       '.task-list__action-btn--complete',
     ) as HTMLButtonElement;
     completeBtn.click();
 
-    expect(taskServiceSpy.completeTask).toHaveBeenCalledWith('p1');
+    expect(missionServiceSpy.completeMission).toHaveBeenCalledWith('p1');
   });
 
-  it('should call undoComplete when undo button clicked', () => {
+  it('should call undoCompleteMission when undo button clicked', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const undoBtn = compiled.querySelector('.task-list__action-btn--undo') as HTMLButtonElement;
     undoBtn.click();
 
-    expect(taskServiceSpy.undoComplete).toHaveBeenCalledWith('c1');
+    expect(missionServiceSpy.undoCompleteMission).toHaveBeenCalledWith('c1');
   });
 
-  it('should call deleteTask when delete button clicked', () => {
+  it('should call deleteMission when delete button clicked', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const deleteBtns = compiled.querySelectorAll('.task-list__action-btn--danger');
     (deleteBtns[0] as HTMLButtonElement).click();
 
-    expect(taskServiceSpy.deleteTask).toHaveBeenCalledWith('p1');
+    expect(missionServiceSpy.deleteMission).toHaveBeenCalledWith('p1');
   });
 
   it('should show edit button only on pending tasks', () => {
@@ -179,7 +179,7 @@ describe('TaskListComponent', () => {
   });
 
   it('should show empty state when no pending tasks', () => {
-    taskServiceSpy.pendingTasks = signal([]);
+    missionServiceSpy.pendingTasks = signal([]);
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
@@ -189,7 +189,7 @@ describe('TaskListComponent', () => {
   });
 
   it('should show empty state when no completed tasks', () => {
-    taskServiceSpy.completedTasks = signal([]);
+    missionServiceSpy.completedTasks = signal([]);
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
@@ -204,7 +204,7 @@ describe('TaskListComponent', () => {
     fixture.detectChanges();
 
     expect(component.showForm()).toBe(true);
-    expect(component.editingTask()).toBe(null);
+    expect(component.editingMission()).toBe(null);
     expect(compiled.querySelector('app-task-form')).toBeTruthy();
   });
 
@@ -215,7 +215,7 @@ describe('TaskListComponent', () => {
     fixture.detectChanges();
 
     expect(component.showForm()).toBe(true);
-    expect(component.editingTask()?.id).toBe('p1');
+    expect(component.editingMission()?.id).toBe('p1');
   });
 
   it('should close form when saved event fires', () => {
@@ -228,6 +228,6 @@ describe('TaskListComponent', () => {
     fixture.detectChanges();
 
     expect(component.showForm()).toBe(false);
-    expect(component.editingTask()).toBe(null);
+    expect(component.editingMission()).toBe(null);
   });
 });

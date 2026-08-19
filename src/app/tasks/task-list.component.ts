@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
-import { TaskService } from '../game/task.service';
+import { MissionService } from '../game/mission.service';
 import { TaskFormComponent } from './task-form.component';
-import { Difficulty, Task, XP_TABLE } from '../game/game.types';
+import { Difficulty, Mission, XP_TABLE } from '../game/game.types';
 
 @Component({
   selector: 'app-task-list',
@@ -10,10 +10,10 @@ import { Difficulty, Task, XP_TABLE } from '../game/game.types';
   styleUrl: './task-list.component.scss',
 })
 export class TaskListComponent {
-  private readonly taskService = inject(TaskService);
+  private readonly missionService = inject(MissionService);
 
-  readonly pendingTasks = this.taskService.pendingTasks;
-  readonly completedTasks = this.taskService.completedTasks;
+  readonly pendingTasks = this.missionService.pendingTasks;
+  readonly completedTasks = this.missionService.completedTasks;
 
   readonly xpTable = XP_TABLE;
 
@@ -26,33 +26,33 @@ export class TaskListComponent {
   };
 
   readonly showForm = signal(false);
-  readonly editingTask = signal<Task | null>(null);
+  readonly editingMission = signal<Mission | null>(null);
 
   startCreate(): void {
-    this.editingTask.set(null);
+    this.editingMission.set(null);
     this.showForm.set(true);
   }
 
-  startEdit(task: Task): void {
-    this.editingTask.set(task);
+  startEdit(mission: Mission): void {
+    this.editingMission.set(mission);
     this.showForm.set(true);
   }
 
   closeForm(): void {
     this.showForm.set(false);
-    this.editingTask.set(null);
+    this.editingMission.set(null);
   }
 
-  completeTask(id: string): void {
-    this.taskService.completeTask(id);
+  completeMission(id: string): void {
+    this.missionService.completeMission(id);
   }
 
-  undoComplete(id: string): void {
-    this.taskService.undoComplete(id);
+  undoCompleteMission(id: string): void {
+    this.missionService.undoCompleteMission(id);
   }
 
-  deleteTask(id: string): void {
-    this.taskService.deleteTask(id);
+  deleteMission(id: string): void {
+    this.missionService.deleteMission(id);
   }
 
   /** Converte 'YYYY-MM-DD' em 'DD/MM/YYYY' para exibição. */

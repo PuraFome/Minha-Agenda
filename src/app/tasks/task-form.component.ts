@@ -1,7 +1,7 @@
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { TaskService } from '../game/task.service';
-import { DIFFICULTIES, Difficulty, Task, XP_TABLE } from '../game/game.types';
+import { MissionService } from '../game/mission.service';
+import { DIFFICULTIES, Difficulty, Mission, XP_TABLE } from '../game/game.types';
 
 @Component({
   selector: 'app-task-form',
@@ -10,10 +10,10 @@ import { DIFFICULTIES, Difficulty, Task, XP_TABLE } from '../game/game.types';
   styleUrl: './task-form.component.scss',
 })
 export class TaskFormComponent {
-  private readonly taskService = inject(TaskService);
+  private readonly missionService = inject(MissionService);
 
-  /** Tarefa pendente em edição. Quando ausente, o formulário cria uma nova tarefa. */
-  readonly task = input<Task | null>(null);
+  /** Missão pendente em edição. Quando ausente, o formulário cria uma nova missão. */
+  readonly task = input<Mission | null>(null);
 
   /** Emitido após salvar (criar ou editar). */
   readonly saved = output<void>();
@@ -60,13 +60,13 @@ export class TaskFormComponent {
     const due = this.dueDate().trim() || null;
     const current = this.task();
     if (current) {
-      this.taskService.editTask(current.id, {
+      this.missionService.editMission(current.id, {
         title: this.trimmedTitle(),
         difficulty: this.difficulty(),
         dueDate: due,
       });
     } else {
-      this.taskService.addTask(this.trimmedTitle(), this.difficulty(), due);
+      this.missionService.addMission(this.trimmedTitle(), this.difficulty(), due);
     }
     this.saved.emit();
   }

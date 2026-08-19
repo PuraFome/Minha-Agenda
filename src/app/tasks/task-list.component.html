@@ -10,7 +10,7 @@
   </header>
 
   @if (showForm()) {
-    <app-task-form [task]="editingTask()" (saved)="closeForm()" />
+    <app-task-form [task]="editingMission()" (saved)="closeForm()" />
   }
 
   <section class="task-list__section" aria-labelledby="pending-title">
@@ -48,7 +48,7 @@
               <button
                 type="button"
                 class="task-list__action-btn task-list__action-btn--complete"
-                (click)="completeTask(row.task.id)"
+                (click)="completeMission(row.task.id)"
                 [attr.aria-label]="'Concluir tarefa ' + row.task.title"
               >
                 <svg class="task-list__action-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -69,7 +69,7 @@
               <button
                 type="button"
                 class="task-list__action-btn task-list__action-btn--danger"
-                (click)="deleteTask(row.task.id)"
+                (click)="deleteMission(row.task.id)"
                 [attr.aria-label]="'Excluir tarefa ' + row.task.title"
               >
                 <svg class="task-list__action-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -105,7 +105,7 @@
               <button
                 type="button"
                 class="task-list__action-btn task-list__action-btn--undo"
-                (click)="undoComplete(task.id)"
+                (click)="undoCompleteMission(task.id)"
                 [attr.aria-label]="'Desfazer conclusão de ' + task.title"
               >
                 <svg class="task-list__action-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -116,7 +116,7 @@
               <button
                 type="button"
                 class="task-list__action-btn task-list__action-btn--danger"
-                (click)="deleteTask(task.id)"
+                (click)="deleteMission(task.id)"
                 [attr.aria-label]="'Excluir tarefa ' + task.title"
               >
                 <svg class="task-list__action-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

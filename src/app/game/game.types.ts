@@ -8,7 +8,7 @@ export interface Hero {
   totalXp: number;
 }
 
-export interface Task {
+export interface Mission {
   id: string;
   title: string;
   difficulty: Difficulty;
