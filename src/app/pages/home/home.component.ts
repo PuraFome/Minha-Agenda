@@ -3,7 +3,7 @@ import { GameService } from '../../game/game.service';
 import { LevelUpComponent } from '../../game/level-up.component';
 import { HeroCardComponent } from '../../hero/hero-card.component';
 import { HeroSetupComponent } from '../../hero/hero-setup.component';
-import { TaskFormComponent } from '../../tasks/task-form.component';
+import { MissionFormComponent } from '../../missions/mission-form.component';
 import { TaskListComponent } from '../../tasks/task-list.component';
 
 @Component({
@@ -11,7 +11,7 @@ import { TaskListComponent } from '../../tasks/task-list.component';
   imports: [
     HeroSetupComponent,
     HeroCardComponent,
-    TaskFormComponent,
+    MissionFormComponent,
     TaskListComponent,
     LevelUpComponent,
   ],

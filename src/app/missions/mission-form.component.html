@@ -1,13 +1,13 @@
 <form (ngSubmit)="onSubmit()" class="task-form" novalidate>
   <div class="task-form__field">
-    <label for="task-title" class="task-form__label">Título</label>
+    <label for="task-title" class="task-form__label">Título da missão</label>
     <input
       id="task-title"
       type="text"
       [(ngModel)]="title"
       name="title"
       class="task-form__input"
-      placeholder="O que precisa ser feito?"
+      placeholder="Qual é a missão?"
       required
     />
   </div>
@@ -46,7 +46,7 @@
       [disabled]="!canSubmit()"
       [attr.aria-disabled]="!canSubmit()"
     >
-      {{ isEditing() ? 'Salvar alterações' : 'Adicionar tarefa' }}
+      {{ isEditing() ? 'Salvar alterações' : 'Criar missão' }}
     </button>
   </div>
 </form>

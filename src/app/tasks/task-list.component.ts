@@ -1,11 +1,11 @@
 import { Component, inject, signal } from '@angular/core';
 import { MissionService } from '../game/mission.service';
-import { TaskFormComponent } from './task-form.component';
+import { MissionFormComponent } from '../missions/mission-form.component';
 import { Difficulty, Mission, XP_TABLE } from '../game/game.types';
 
 @Component({
   selector: 'app-task-list',
-  imports: [TaskFormComponent],
+  imports: [MissionFormComponent],
   templateUrl: './task-list.component.html',
   styleUrl: './task-list.component.scss',
 })

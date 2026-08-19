@@ -1,12 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { TaskFormComponent } from './task-form.component';
+import { MissionFormComponent } from './mission-form.component';
 import { MissionService } from '../game/mission.service';
 import { Mission } from '../game/game.types';
 import { vi } from 'vitest';
 
-describe('TaskFormComponent', () => {
-  let component: TaskFormComponent;
-  let fixture: ComponentFixture<TaskFormComponent>;
+describe('MissionFormComponent', () => {
+  let component: MissionFormComponent;
+  let fixture: ComponentFixture<MissionFormComponent>;
   let missionServiceSpy: {
     addMission: ReturnType<typeof vi.fn>;
     editMission: ReturnType<typeof vi.fn>;
@@ -28,11 +28,11 @@ describe('TaskFormComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [TaskFormComponent],
+      imports: [MissionFormComponent],
       providers: [{ provide: MissionService, useValue: missionServiceSpy }],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(TaskFormComponent);
+    fixture = TestBed.createComponent(MissionFormComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
@@ -72,7 +72,7 @@ describe('TaskFormComponent', () => {
   });
 
   it('should enable submit when title is filled', () => {
-    component.title.set('My task');
+    component.title.set('My mission');
     fixture.detectChanges();
 
     const submitBtn = fixture.nativeElement.querySelector(
@@ -116,7 +116,7 @@ describe('TaskFormComponent', () => {
   });
 
   it('should call addMission with title, difficulty and dueDate on submit', () => {
-    component.title.set('New task');
+    component.title.set('New mission');
     component.difficulty.set('media');
     component.dueDate.set('2026-08-25');
     fixture.detectChanges();
@@ -126,11 +126,11 @@ describe('TaskFormComponent', () => {
     ) as HTMLButtonElement;
     submitBtn.click();
 
-    expect(missionServiceSpy.addMission).toHaveBeenCalledWith('New task', 'media', '2026-08-25');
+    expect(missionServiceSpy.addMission).toHaveBeenCalledWith('New mission', 'media', '2026-08-25');
   });
 
   it('should call addMission with null dueDate when date is empty', () => {
-    component.title.set('No date task');
+    component.title.set('No date mission');
     fixture.detectChanges();
 
     const submitBtn = fixture.nativeElement.querySelector(
@@ -138,7 +138,7 @@ describe('TaskFormComponent', () => {
     ) as HTMLButtonElement;
     submitBtn.click();
 
-    expect(missionServiceSpy.addMission).toHaveBeenCalledWith('No date task', 'facil', null);
+    expect(missionServiceSpy.addMission).toHaveBeenCalledWith('No date mission', 'facil', null);
   });
 
   it('should not call addMission when title is empty', () => {
@@ -153,7 +153,7 @@ describe('TaskFormComponent', () => {
   it('should emit saved after submit', () => {
     let savedCount = 0;
     component.saved.subscribe(() => savedCount++);
-    component.title.set('Emit task');
+    component.title.set('Emit mission');
     fixture.detectChanges();
 
     const submitBtn = fixture.nativeElement.querySelector(
@@ -164,12 +164,12 @@ describe('TaskFormComponent', () => {
     expect(savedCount).toBe(1);
   });
 
-  it('should pre-fill fields from task in edit mode', () => {
+  it('should pre-fill fields from mission in edit mode', () => {
     fixture.componentRef.setInput('task', existingMission);
     fixture.detectChanges();
 
     expect(component.isEditing()).toBe(true);
-    expect(component.title()).toBe('Existing task');
+    expect(component.title()).toBe('Existing mission');
     expect(component.difficulty()).toBe('dificil');
     expect(component.dueDate()).toBe('2026-08-20');
   });

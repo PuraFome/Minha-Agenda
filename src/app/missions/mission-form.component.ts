@@ -4,12 +4,12 @@ import { MissionService } from '../game/mission.service';
 import { DIFFICULTIES, Difficulty, Mission, XP_TABLE } from '../game/game.types';
 
 @Component({
-  selector: 'app-task-form',
+  selector: 'app-mission-form',
   imports: [FormsModule],
-  templateUrl: './task-form.component.html',
-  styleUrl: './task-form.component.scss',
+  templateUrl: './mission-form.component.html',
+  styleUrl: './mission-form.component.scss',
 })
-export class TaskFormComponent {
+export class MissionFormComponent {
   private readonly missionService = inject(MissionService);
 
   /** Missão pendente em edição. Quando ausente, o formulário cria uma nova missão. */

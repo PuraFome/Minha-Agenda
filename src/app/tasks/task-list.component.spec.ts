@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { TaskListComponent } from './task-list.component';
-import { TaskFormComponent } from './task-form.component';
+import { MissionFormComponent } from '../missions/mission-form.component';
 import { MissionService, PendingMissionRow } from '../game/mission.service';
 import { Mission } from '../game/game.types';
 import { signal } from '@angular/core';
@@ -205,7 +205,7 @@ describe('TaskListComponent', () => {
 
     expect(component.showForm()).toBe(true);
     expect(component.editingMission()).toBe(null);
-    expect(compiled.querySelector('app-task-form')).toBeTruthy();
+    expect(compiled.querySelector('app-mission-form')).toBeTruthy();
   });
 
   it('should open edit form with the selected task', () => {
@@ -222,7 +222,7 @@ describe('TaskListComponent', () => {
     component.startCreate();
     fixture.detectChanges();
 
-    const formDebug = fixture.debugElement.query(By.directive(TaskFormComponent));
+    const formDebug = fixture.debugElement.query(By.directive(MissionFormComponent));
     expect(formDebug).toBeTruthy();
     formDebug.componentInstance.saved.emit();
     fixture.detectChanges();

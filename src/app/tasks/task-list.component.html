@@ -10,7 +10,7 @@
   </header>
 
   @if (showForm()) {
-    <app-task-form [task]="editingMission()" (saved)="closeForm()" />
+    <app-mission-form [task]="editingMission()" (saved)="closeForm()" />
   }
 
   <section class="task-list__section" aria-labelledby="pending-title">
