@@ -1,0 +1,47 @@
+<main class="perfil">
+  @if (hero() === null) {
+    <app-hero-setup (created)="onHeroCreated()" />
+  } @else {
+    <div class="perfil__content">
+      <app-hero-card />
+
+      <section class="perfil__stats" aria-labelledby="stats-title">
+        <h2 id="stats-title" class="perfil__stats-title">Estatísticas</h2>
+        <dl class="perfil__stats-grid">
+          <div class="perfil__stat">
+            <dt class="perfil__stat-label">Nível</dt>
+            <dd class="perfil__stat-value">{{ level() }}</dd>
+          </div>
+          <div class="perfil__stat">
+            <dt class="perfil__stat-label">XP total</dt>
+            <dd class="perfil__stat-value">{{ totalXp() }}</dd>
+          </div>
+          <div class="perfil__stat">
+            <dt class="perfil__stat-label">Missões concluídas</dt>
+            <dd class="perfil__stat-value">{{ completedCount() }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="perfil__retention" aria-labelledby="retention-title">
+        <h2 id="retention-title" class="perfil__retention-title">Arquivo de missões</h2>
+        <p class="perfil__retention-hint">
+          Missões concluídas são removidas automaticamente após o período escolhido. O XP ganho é mantido.
+        </p>
+        <label class="perfil__retention-label" for="retention-days">
+          Arquivar missões concluídas após
+        </label>
+        <select
+          id="retention-days"
+          class="perfil__retention-select"
+          [value]="retentionDays()"
+          (change)="onRetentionChange($event)"
+        >
+          @for (option of retentionOptions; track option.days) {
+            <option [value]="option.days">{{ option.label }}</option>
+          }
+        </select>
+      </section>
+    </div>
+  }
+</main>

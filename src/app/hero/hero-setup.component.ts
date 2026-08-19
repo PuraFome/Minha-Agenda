@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, EventEmitter, inject, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { GameService } from '../game/game.service';
 import { HeroClass, HERO_CLASSES } from '../game/game.types';
@@ -11,6 +11,9 @@ import { HeroClass, HERO_CLASSES } from '../game/game.types';
 })
 export class HeroSetupComponent {
   private readonly gameService = inject(GameService);
+
+  /** Emitido após o herói ser criado com sucesso no submit. */
+  @Output() created = new EventEmitter<void>();
 
   readonly heroClasses = HERO_CLASSES;
 
@@ -45,5 +48,6 @@ export class HeroSetupComponent {
       return;
     }
     this.gameService.createHero(this.trimmedName(), this.selectedClass()!);
+    this.created.emit();
   }
 }

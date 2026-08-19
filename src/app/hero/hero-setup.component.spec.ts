@@ -96,6 +96,33 @@ describe('HeroSetupComponent', () => {
     expect(gameServiceSpy.createHero).not.toHaveBeenCalled();
   });
 
+  it('should emit created after createHero on valid submit', () => {
+    const emitSpy = vi.spyOn(component.created, 'emit');
+    component.name.set('My Hero');
+    component.selectClass('ladino');
+    fixture.detectChanges();
+
+    const submitBtn = fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement;
+    submitBtn.click();
+
+    expect(gameServiceSpy.createHero).toHaveBeenCalledWith('My Hero', 'ladino');
+    expect(emitSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('should not emit created when name is empty (submit disabled)', () => {
+    const emitSpy = vi.spyOn(component.created, 'emit');
+    component.name.set('');
+    component.selectClass('guerreiro');
+    fixture.detectChanges();
+
+    const submitBtn = fixture.nativeElement.querySelector('button[type="submit"]') as HTMLButtonElement;
+    expect(submitBtn.disabled).toBe(true);
+    submitBtn.click();
+
+    expect(gameServiceSpy.createHero).not.toHaveBeenCalled();
+    expect(emitSpy).not.toHaveBeenCalled();
+  });
+
   it('should render class buttons with correct labels and icons', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const buttons = compiled.querySelectorAll('.hero-setup__class-btn');
