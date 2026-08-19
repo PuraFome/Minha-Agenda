@@ -1,15 +1,16 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
-import { TaskListComponent } from './task-list.component';
-import { MissionFormComponent } from '../missions/mission-form.component';
+import { MissionListComponent } from './mission-list.component';
+import { MissionFormComponent } from './mission-form.component';
 import { MissionService, PendingMissionRow } from '../game/mission.service';
+import { SettingsService } from '../game/settings.service';
 import { Mission } from '../game/game.types';
 import { signal } from '@angular/core';
 import { vi } from 'vitest';
 
-describe('TaskListComponent', () => {
-  let component: TaskListComponent;
-  let fixture: ComponentFixture<TaskListComponent>;
+describe('MissionListComponent', () => {
+  let component: MissionListComponent;
+  let fixture: ComponentFixture<MissionListComponent>;
   let missionServiceSpy: {
     addMission: ReturnType<typeof vi.fn>;
     editMission: ReturnType<typeof vi.fn>;
@@ -18,6 +19,9 @@ describe('TaskListComponent', () => {
     deleteMission: ReturnType<typeof vi.fn>;
     pendingTasks: ReturnType<typeof signal>;
     completedTasks: ReturnType<typeof signal>;
+  };
+  let settingsServiceSpy: {
+    retentionDays: ReturnType<typeof signal>;
   };
 
   const pendingRows: PendingMissionRow[] = [
@@ -77,13 +81,19 @@ describe('TaskListComponent', () => {
       pendingTasks: signal(pendingRows),
       completedTasks: signal(completedTasks),
     };
+    settingsServiceSpy = {
+      retentionDays: signal(0),
+    };
 
     await TestBed.configureTestingModule({
-      imports: [TaskListComponent],
-      providers: [{ provide: MissionService, useValue: missionServiceSpy }],
+      imports: [MissionListComponent],
+      providers: [
+        { provide: MissionService, useValue: missionServiceSpy },
+        { provide: SettingsService, useValue: settingsServiceSpy },
+      ],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(TaskListComponent);
+    fixture = TestBed.createComponent(MissionListComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
@@ -102,7 +112,7 @@ describe('TaskListComponent', () => {
 
   it('should render pending rows in the order provided by the service', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    const titles = Array.from(compiled.querySelectorAll('.task-list__item-title')).map(
+    const titles = Array.from(compiled.querySelectorAll('.mission-list__item-title')).map(
       (el) => el.textContent,
     );
     expect(titles[0]).toContain('Overdue task');
@@ -113,7 +123,7 @@ describe('TaskListComponent', () => {
 
   it('should render difficulty badges with XP labels', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    const badges = compiled.querySelectorAll('.task-list__badge');
+    const badges = compiled.querySelectorAll('.mission-list__badge');
     expect(badges[0].textContent).toContain('Fácil');
     expect(badges[0].textContent).toContain('+10 XP');
     expect(badges[1].textContent).toContain('Épica');
@@ -124,19 +134,19 @@ describe('TaskListComponent', () => {
 
   it('should apply difficulty badge color class', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    const badges = compiled.querySelectorAll('.task-list__badge');
-    expect(badges[0].classList.contains('task-list__badge--facil')).toBe(true);
-    expect(badges[1].classList.contains('task-list__badge--epica')).toBe(true);
-    expect(badges[2].classList.contains('task-list__badge--media')).toBe(true);
-    expect(badges[3].classList.contains('task-list__badge--dificil')).toBe(true);
+    const badges = compiled.querySelectorAll('.mission-list__badge');
+    expect(badges[0].classList.contains('mission-list__badge--facil')).toBe(true);
+    expect(badges[1].classList.contains('mission-list__badge--epica')).toBe(true);
+    expect(badges[2].classList.contains('mission-list__badge--media')).toBe(true);
+    expect(badges[3].classList.contains('mission-list__badge--dificil')).toBe(true);
   });
 
   it('should mark overdue task with overdue class and tag', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    const items = compiled.querySelectorAll('.task-list__item');
-    expect(items[0].classList.contains('task-list__item--overdue')).toBe(true);
+    const items = compiled.querySelectorAll('.mission-list__item');
+    expect(items[0].classList.contains('mission-list__item--overdue')).toBe(true);
     expect(items[0].textContent).toContain('Atrasada');
-    expect(items[1].classList.contains('task-list__item--overdue')).toBe(false);
+    expect(items[1].classList.contains('mission-list__item--overdue')).toBe(false);
   });
 
   it('should format due dates as DD/MM/YYYY', () => {
@@ -148,7 +158,7 @@ describe('TaskListComponent', () => {
   it('should call completeMission when complete button clicked', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const completeBtn = compiled.querySelector(
-      '.task-list__action-btn--complete',
+      '.mission-list__action-btn--complete',
     ) as HTMLButtonElement;
     completeBtn.click();
 
@@ -157,7 +167,7 @@ describe('TaskListComponent', () => {
 
   it('should call undoCompleteMission when undo button clicked', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    const undoBtn = compiled.querySelector('.task-list__action-btn--undo') as HTMLButtonElement;
+    const undoBtn = compiled.querySelector('.mission-list__action-btn--undo') as HTMLButtonElement;
     undoBtn.click();
 
     expect(missionServiceSpy.undoCompleteMission).toHaveBeenCalledWith('c1');
@@ -165,7 +175,7 @@ describe('TaskListComponent', () => {
 
   it('should call deleteMission when delete button clicked', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    const deleteBtns = compiled.querySelectorAll('.task-list__action-btn--danger');
+    const deleteBtns = compiled.querySelectorAll('.mission-list__action-btn--danger');
     (deleteBtns[0] as HTMLButtonElement).click();
 
     expect(missionServiceSpy.deleteMission).toHaveBeenCalledWith('p1');
@@ -173,9 +183,9 @@ describe('TaskListComponent', () => {
 
   it('should show edit button only on pending tasks', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    const items = compiled.querySelectorAll('.task-list__item');
-    expect(items[0].querySelectorAll('.task-list__action-btn--edit').length).toBe(1);
-    expect(items[3].querySelectorAll('.task-list__action-btn--edit').length).toBe(0);
+    const items = compiled.querySelectorAll('.mission-list__item');
+    expect(items[0].querySelectorAll('.mission-list__action-btn--edit').length).toBe(1);
+    expect(items[3].querySelectorAll('.mission-list__action-btn--edit').length).toBe(0);
   });
 
   it('should show empty state when no pending tasks', () => {
@@ -183,8 +193,8 @@ describe('TaskListComponent', () => {
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.task-list__empty')?.textContent).toContain(
-      'Nenhuma tarefa pendente',
+    expect(compiled.querySelector('.mission-list__empty')?.textContent).toContain(
+      'Nenhuma missão pendente',
     );
   });
 
@@ -193,13 +203,63 @@ describe('TaskListComponent', () => {
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const empties = compiled.querySelectorAll('.task-list__empty');
+    const empties = compiled.querySelectorAll('.mission-list__empty');
     expect(empties.length).toBe(2);
   });
 
-  it('should open create form on new task button', () => {
+  it('should render only pending section when section input is pending', () => {
+    fixture.componentRef.setInput('section', 'pending');
+    fixture.detectChanges();
+
     const compiled = fixture.nativeElement as HTMLElement;
-    const newBtn = compiled.querySelector('.task-list__new-btn') as HTMLButtonElement;
+    expect(compiled.querySelector('#pending-title')).toBeTruthy();
+    expect(compiled.querySelector('#completed-title')).toBeNull();
+  });
+
+  it('should render only completed section when section input is completed', () => {
+    fixture.componentRef.setInput('section', 'completed');
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('#pending-title')).toBeNull();
+    expect(compiled.querySelector('#completed-title')).toBeTruthy();
+  });
+
+  it('should show retention hint when retentionDays > 0 and mission has completedAt', () => {
+    settingsServiceSpy.retentionDays = signal(7);
+    fixture.destroy();
+    fixture = TestBed.createComponent(MissionListComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.mission-list__retention-hint')?.textContent).toContain(
+      'será arquivada em 7 dias',
+    );
+  });
+
+  it('should not show retention hint when retentionDays is 0', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.mission-list__retention-hint')).toBeNull();
+  });
+
+  it('should not show retention hint for completed mission without completedAt', () => {
+    missionServiceSpy.completedTasks = signal([
+      { ...completedTasks[0], completedAt: null },
+    ]);
+    settingsServiceSpy.retentionDays = signal(7);
+    fixture.destroy();
+    fixture = TestBed.createComponent(MissionListComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.mission-list__retention-hint')).toBeNull();
+  });
+
+  it('should open create form on new mission button', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const newBtn = compiled.querySelector('.mission-list__new-btn') as HTMLButtonElement;
     newBtn.click();
     fixture.detectChanges();
 
@@ -208,9 +268,9 @@ describe('TaskListComponent', () => {
     expect(compiled.querySelector('app-mission-form')).toBeTruthy();
   });
 
-  it('should open edit form with the selected task', () => {
+  it('should open edit form with the selected mission', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    const editBtn = compiled.querySelector('.task-list__action-btn--edit') as HTMLButtonElement;
+    const editBtn = compiled.querySelector('.mission-list__action-btn--edit') as HTMLButtonElement;
     editBtn.click();
     fixture.detectChanges();
 

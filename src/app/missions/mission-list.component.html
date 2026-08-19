@@ -1,0 +1,140 @@
+<section class="mission-list" aria-labelledby="mission-list-title">
+  <header class="mission-list__header">
+    <div class="mission-list__heading">
+      <h2 id="mission-list-title" class="mission-list__title">Missões</h2>
+      <p class="mission-list__subtitle">Complete missões para ganhar XP</p>
+    </div>
+    <button type="button" class="mission-list__new-btn" (click)="startCreate()">
+      Nova missão
+    </button>
+  </header>
+
+  @if (showForm()) {
+    <app-mission-form [task]="editingMission()" (saved)="closeForm()" />
+  }
+
+  @if (showPending()) {
+    <section class="mission-list__section" aria-labelledby="pending-title">
+      <h3 id="pending-title" class="mission-list__section-title">Pendentes</h3>
+
+      @if (pendingTasks().length === 0) {
+        <p class="mission-list__empty">Nenhuma missão pendente. Que tal criar uma?</p>
+      } @else {
+        <ul class="mission-list__items">
+          @for (row of pendingTasks(); track row.task.id) {
+            <li
+              class="mission-list__item"
+              [class.mission-list__item--overdue]="row.overdue"
+            >
+              <div class="mission-list__item-main">
+                <span class="mission-list__item-title">{{ row.task.title }}</span>
+                <div class="mission-list__item-meta">
+                  <span class="mission-list__badge mission-list__badge--{{ row.task.difficulty }}">
+                    {{ difficultyLabels[row.task.difficulty] }} · +{{ xpTable[row.task.difficulty] }} XP
+                  </span>
+                  @if (row.task.dueDate) {
+                    <span
+                      class="mission-list__due"
+                      [class.mission-list__due--overdue]="row.overdue"
+                    >
+                      {{ formatDueDate(row.task.dueDate) }}
+                      @if (row.overdue) {
+                        <span class="mission-list__overdue-tag">Atrasada</span>
+                      }
+                    </span>
+                  }
+                </div>
+              </div>
+              <div class="mission-list__actions">
+                <button
+                  type="button"
+                  class="mission-list__action-btn mission-list__action-btn--complete"
+                  (click)="completeMission(row.task.id)"
+                  [attr.aria-label]="'Concluir missão ' + row.task.title"
+                >
+                  <svg class="mission-list__action-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  class="mission-list__action-btn mission-list__action-btn--edit"
+                  (click)="startEdit(row.task)"
+                  [attr.aria-label]="'Editar missão ' + row.task.title"
+                >
+                  <svg class="mission-list__action-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  class="mission-list__action-btn mission-list__action-btn--danger"
+                  (click)="deleteMission(row.task.id)"
+                  [attr.aria-label]="'Excluir missão ' + row.task.title"
+                >
+                  <svg class="mission-list__action-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+
+  @if (showCompleted()) {
+    <section class="mission-list__section" aria-labelledby="completed-title">
+      <h3 id="completed-title" class="mission-list__section-title">Concluídas</h3>
+
+      @if (completedTasks().length === 0) {
+        <p class="mission-list__empty">Nenhuma missão concluída ainda.</p>
+      } @else {
+        <ul class="mission-list__items">
+          @for (task of completedTasks(); track task.id) {
+            <li class="mission-list__item mission-list__item--completed">
+              <div class="mission-list__item-main">
+                <span class="mission-list__item-title">{{ task.title }}</span>
+                <div class="mission-list__item-meta">
+                  <span class="mission-list__badge mission-list__badge--{{ task.difficulty }}">
+                    {{ difficultyLabels[task.difficulty] }} · +{{ xpTable[task.difficulty] }} XP
+                  </span>
+                  @if (retentionHint(task); as hint) {
+                    <span class="mission-list__retention-hint">{{ hint }}</span>
+                  }
+                </div>
+              </div>
+              <div class="mission-list__actions">
+                <button
+                  type="button"
+                  class="mission-list__action-btn mission-list__action-btn--undo"
+                  (click)="undoCompleteMission(task.id)"
+                  [attr.aria-label]="'Desfazer conclusão de ' + task.title"
+                >
+                  <svg class="mission-list__action-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="1 4 1 10 7 10"></polyline>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  class="mission-list__action-btn mission-list__action-btn--danger"
+                  (click)="deleteMission(task.id)"
+                  [attr.aria-label]="'Excluir missão ' + task.title"
+                >
+                  <svg class="mission-list__action-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  </svg>
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
+</section>

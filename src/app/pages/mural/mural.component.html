@@ -1,0 +1,55 @@
+<section class="mural" aria-label="Mural de missões">
+  <header class="mural__header">
+    <h1 class="mural__title">Mural de Missões</h1>
+    <p class="mural__subtitle">Missões afixadas na taberna do herói</p>
+  </header>
+
+  <div class="mural__tabs" role="tablist" aria-label="Seções do mural">
+    <button
+      type="button"
+      role="tab"
+      id="mural-tab-pending"
+      aria-controls="mural-panel-pending"
+      [attr.aria-selected]="activeTab() === 'pending'"
+      [class.mural__tab--active]="activeTab() === 'pending'"
+      (click)="selectTab('pending')"
+    >
+      Missões Ativas
+    </button>
+    <button
+      type="button"
+      role="tab"
+      id="mural-tab-completed"
+      aria-controls="mural-panel-completed"
+      [attr.aria-selected]="activeTab() === 'completed'"
+      [class.mural__tab--active]="activeTab() === 'completed'"
+      (click)="selectTab('completed')"
+    >
+      Arquivo
+    </button>
+  </div>
+
+  <div
+    class="mural__panel"
+    role="tabpanel"
+    id="mural-panel-pending"
+    aria-labelledby="mural-tab-pending"
+    [hidden]="activeTab() !== 'pending'"
+  >
+    @if (activeTab() === 'pending') {
+      <app-mission-list section="pending" />
+    }
+  </div>
+
+  <div
+    class="mural__panel"
+    role="tabpanel"
+    id="mural-panel-completed"
+    aria-labelledby="mural-tab-completed"
+    [hidden]="activeTab() !== 'completed'"
+  >
+    @if (activeTab() === 'completed') {
+      <app-mission-list section="completed" />
+    }
+  </div>
+</section>

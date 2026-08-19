@@ -1,0 +1,203 @@
+.mission-list {
+  --muted: color-mix(in srgb, var(--mural-text) 75%, var(--mural-card-bg));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4) var(--space-8);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+  }
+
+  &__title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--mural-text);
+  }
+
+  &__subtitle {
+    font-size: 0.9375rem;
+    color: var(--muted);
+  }
+
+  &__new-btn {
+    padding: var(--space-2) var(--space-5);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-primary-contrast);
+    background: var(--color-primary);
+    border: none;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+
+    &:hover { background: var(--color-primary-hover); }
+  }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  &__section-title {
+    padding-bottom: var(--space-2);
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--mural-text);
+    border-bottom: 1px solid var(--mural-card-border);
+  }
+
+  &__empty {
+    padding: var(--space-5);
+    text-align: center;
+    color: var(--muted);
+  }
+
+  &__items {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    background: var(--mural-card-bg);
+    border: 1px solid var(--mural-card-border);
+    border-radius: var(--radius-md);
+
+    &--overdue {
+      border-color: color-mix(in srgb, var(--color-primary) 45%, var(--mural-card-border));
+    }
+
+    &--completed {
+      opacity: 0.75;
+    }
+  }
+
+  &__item-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  &__item-title {
+    font-weight: 600;
+    color: var(--mural-text);
+  }
+
+  &__item--completed &__item-title { text-decoration: line-through; }
+
+  &__item-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+
+  &__retention-hint {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  &__badge {
+    --badge-color: var(--muted);
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-1) var(--space-3);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--badge-color);
+    background: color-mix(in srgb, var(--badge-color) 14%, var(--mural-card-bg));
+    border-radius: var(--radius-full);
+
+    &--facil {
+      --badge-color: var(--color-accent);
+    }
+
+    &--media {
+      --badge-color: color-mix(in srgb, var(--color-accent) 70%, var(--color-primary));
+    }
+
+    &--dificil {
+      --badge-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-primary));
+    }
+
+    &--muito-dificil {
+      --badge-color: color-mix(in srgb, var(--color-accent) 20%, var(--color-primary));
+    }
+
+    &--epica {
+      --badge-color: var(--color-primary);
+    }
+  }
+
+  &__due {
+    font-size: 0.8125rem;
+    color: var(--muted);
+
+    &--overdue { font-weight: 700; color: color-mix(in srgb, var(--color-primary) 70%, var(--mural-text)); }
+  }
+
+  &__overdue-tag {
+    margin-left: var(--space-1);
+    padding: 0 var(--space-2);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--color-primary-contrast);
+    background: var(--color-primary);
+    border-radius: var(--radius-full);
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  &__action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    color: var(--color-text);
+    background: var(--color-surface-muted);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+
+    &:hover { background: var(--color-border); }
+
+    &--complete {
+      color: var(--color-accent);
+    }
+
+    &--undo {
+      color: var(--muted);
+    }
+
+    &--danger {
+      color: var(--color-primary);
+    }
+  }
+
+  &__action-icon {
+    width: 16px;
+    height: 16px;
+  }
+}

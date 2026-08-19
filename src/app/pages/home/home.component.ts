@@ -4,7 +4,7 @@ import { LevelUpComponent } from '../../game/level-up.component';
 import { HeroCardComponent } from '../../hero/hero-card.component';
 import { HeroSetupComponent } from '../../hero/hero-setup.component';
 import { MissionFormComponent } from '../../missions/mission-form.component';
-import { TaskListComponent } from '../../tasks/task-list.component';
+import { MissionListComponent } from '../../missions/mission-list.component';
 
 @Component({
   selector: 'app-home',
@@ -12,7 +12,7 @@ import { TaskListComponent } from '../../tasks/task-list.component';
     HeroSetupComponent,
     HeroCardComponent,
     MissionFormComponent,
-    TaskListComponent,
+    MissionListComponent,
     LevelUpComponent,
   ],
   templateUrl: './home.component.html',

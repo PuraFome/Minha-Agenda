@@ -47,7 +47,7 @@ describe('HomeComponent', () => {
     expect(compiled.querySelector('app-hero-setup')).toBeTruthy();
     expect(compiled.querySelector('app-hero-card')).toBeFalsy();
     expect(compiled.querySelector('app-mission-form')).toBeFalsy();
-    expect(compiled.querySelector('app-task-list')).toBeFalsy();
+    expect(compiled.querySelector('app-mission-list')).toBeFalsy();
   });
 
   it('should render dashboard when hero exists', () => {
@@ -60,6 +60,6 @@ describe('HomeComponent', () => {
     expect(compiled.querySelector('app-hero-setup')).toBeFalsy();
     expect(compiled.querySelector('app-hero-card')).toBeTruthy();
     expect(compiled.querySelector('app-mission-form')).toBeTruthy();
-    expect(compiled.querySelector('app-task-list')).toBeTruthy();
+    expect(compiled.querySelector('app-mission-list')).toBeTruthy();
   });
 });

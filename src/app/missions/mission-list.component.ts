@@ -1,19 +1,31 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, input, signal } from '@angular/core';
 import { MissionService } from '../game/mission.service';
-import { MissionFormComponent } from '../missions/mission-form.component';
+import { SettingsService } from '../game/settings.service';
+import { MissionFormComponent } from './mission-form.component';
 import { Difficulty, Mission, XP_TABLE } from '../game/game.types';
 
 @Component({
-  selector: 'app-task-list',
+  selector: 'app-mission-list',
   imports: [MissionFormComponent],
-  templateUrl: './task-list.component.html',
-  styleUrl: './task-list.component.scss',
+  templateUrl: './mission-list.component.html',
+  styleUrl: './mission-list.component.scss',
 })
-export class TaskListComponent {
+export class MissionListComponent {
   private readonly missionService = inject(MissionService);
+  private readonly settingsService = inject(SettingsService);
+
+  /** Seção a renderizar: pendentes, concluídas ou ambas. */
+  readonly section = input<'pending' | 'completed' | 'all'>('all');
+
+  readonly showPending = computed(() => this.section() === 'pending' || this.section() === 'all');
+  readonly showCompleted = computed(
+    () => this.section() === 'completed' || this.section() === 'all',
+  );
 
   readonly pendingTasks = this.missionService.pendingTasks;
   readonly completedTasks = this.missionService.completedTasks;
+
+  readonly retentionDays = this.settingsService.retentionDays;
 
   readonly xpTable = XP_TABLE;
 
@@ -53,6 +65,15 @@ export class TaskListComponent {
 
   deleteMission(id: string): void {
     this.missionService.deleteMission(id);
+  }
+
+  /** Dica de retenção para missão concluída, ou null quando não se aplica. */
+  retentionHint(mission: Mission): string | null {
+    const days = this.retentionDays();
+    if (days <= 0 || !mission.completedAt) {
+      return null;
+    }
+    return `será arquivada em ${days} dias`;
   }
 
   /** Converte 'YYYY-MM-DD' em 'DD/MM/YYYY' para exibição. */
