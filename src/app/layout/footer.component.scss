@@ -1,0 +1,26 @@
+.footer {
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+  transition: var(--transition-colors);
+
+  &__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: var(--space-5);
+  }
+
+  &__brand {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  &__copy {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+  }
+}

@@ -113,6 +113,13 @@ graphify-out/
 .graphify_*
 
 # =========================================================
+# Playwright (artefatos de validação de UI)
+# =========================================================
+.playwright-mcp/
+playwright-report/
+test-results/
+
+# =========================================================
 # Python (possível tooling de build/game server)
 # =========================================================
 __pycache__/
@@ -133,3 +140,8 @@ docker-compose.override.yml
 *.db
 *.sqlite
 *.sqlite3
+.ai-home/
+.opencode-data/
+.omo/
+.ia-jail
+AGENTS.md

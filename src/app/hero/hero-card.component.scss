@@ -1,0 +1,218 @@
+.hero-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-md);
+}
+
+.hero-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.hero-card__identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+}
+
+.hero-card__name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.hero-card__edit-input {
+  padding: var(--space-2) var(--space-3);
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: inherit;
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  outline: none;
+  width: 100%;
+}
+
+.hero-card__edit-input:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 20%, transparent);
+}
+
+.hero-card__class {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-full);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text);
+  width: fit-content;
+}
+
+.hero-card__class-icon {
+  font-size: 1.125rem;
+}
+
+.hero-card__level-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  height: 32px;
+  padding: 0 var(--space-3);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-primary-contrast);
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.hero-card__xp {
+  margin-bottom: var(--space-4);
+}
+
+.hero-card__xp-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--space-2);
+}
+
+.hero-card__xp-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+}
+
+.hero-card__xp-values {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-card__xp-bar {
+  height: 10px;
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  position: relative;
+}
+
+.hero-card__xp-fill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+  transition: width 0.5s ease-out;
+  width: 0%;
+}
+
+.hero-card__xp-fill--level-up {
+  animation: hero-card__level-up-pulse 0.6s ease-out;
+}
+
+@keyframes hero-card__level-up-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 60%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 12px color-mix(in srgb, var(--color-primary) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 0%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-card__xp-fill {
+    transition: none;
+  }
+
+  .hero-card__xp-fill--level-up {
+    animation: none;
+  }
+}
+
+.hero-card__xp-hint {
+  margin-top: var(--space-2);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-align: right;
+}
+
+.hero-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.hero-card__edit-btn,
+.hero-card__save-btn,
+.hero-card__cancel-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: var(--transition-colors);
+}
+
+.hero-card__edit-btn:hover,
+.hero-card__save-btn:hover,
+.hero-card__cancel-btn:hover {
+  background: var(--color-border);
+}
+
+.hero-card__edit-btn:focus-visible,
+.hero-card__save-btn:focus-visible,
+.hero-card__cancel-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.hero-card__save-btn {
+  color: var(--color-primary);
+}
+
+.hero-card__save-btn:hover {
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-surface));
+}
+
+.hero-card__cancel-btn {
+  color: var(--color-text-muted);
+}
+
+.hero-card__cancel-btn:hover {
+  background: var(--color-border);
+  color: var(--color-text);
+}
+
+.hero-card__edit-icon,
+.hero-card__save-icon,
+.hero-card__cancel-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}

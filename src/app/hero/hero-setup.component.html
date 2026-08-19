@@ -1,0 +1,49 @@
+<section class="hero-setup" aria-labelledby="setup-title">
+  <header class="hero-setup__header">
+    <h1 id="setup-title" class="hero-setup__title">Crie seu herói</h1>
+    <p class="hero-setup__subtitle">Escolha um nome e uma classe para começar sua jornada</p>
+  </header>
+
+  <form (ngSubmit)="onSubmit()" class="hero-setup__form" novalidate>
+    <div class="hero-setup__field">
+      <label for="hero-name" class="hero-setup__label">Nome do herói</label>
+      <input
+        id="hero-name"
+        type="text"
+        [(ngModel)]="name"
+        name="heroName"
+        class="hero-setup__input"
+        placeholder="Digite seu nome"
+        aria-describedby="name-hint"
+        required
+      />
+      <span id="name-hint" class="hero-setup__hint">Mínimo 1 caractere</span>
+    </div>
+
+    <fieldset class="hero-setup__classes">
+      <legend class="hero-setup__legend">Classe</legend>
+      @for (heroClass of heroClasses; track heroClass) {
+        <button
+          type="button"
+          class="hero-setup__class-btn"
+          [class.hero-setup__class-btn--selected]="selectedClass() === heroClass"
+          (click)="selectClass(heroClass)"
+          [attr.aria-pressed]="selectedClass() === heroClass"
+          [attr.aria-label]="classLabels[heroClass]"
+        >
+          <span class="hero-setup__class-icon" aria-hidden="true">{{ classIcons[heroClass] }}</span>
+          <span class="hero-setup__class-name">{{ classLabels[heroClass] }}</span>
+        </button>
+      }
+    </fieldset>
+
+    <button
+      type="submit"
+      class="hero-setup__submit"
+      [disabled]="!canSubmit()"
+      [attr.aria-disabled]="!canSubmit()"
+    >
+      Começar aventura
+    </button>
+  </form>
+</section>

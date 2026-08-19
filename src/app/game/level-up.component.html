@@ -1,0 +1,25 @@
+@if (visible()) {
+  <div class="level-up">
+    <div class="level-up__backdrop" (click)="dismiss()" aria-hidden="true"></div>
+    <div
+      class="level-up__dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="level-up-title"
+    >
+      <p class="level-up__eyebrow">Parabéns!</p>
+      <h2 id="level-up-title" class="level-up__title">Nível {{ level() }}</h2>
+      <p class="level-up__text">
+        Você subiu de nível. Continue completando tarefas para evoluir ainda mais.
+      </p>
+      <button
+        #dismissBtn
+        type="button"
+        class="level-up__dismiss"
+        (click)="dismiss()"
+      >
+        Continuar
+      </button>
+    </div>
+  </div>
+}

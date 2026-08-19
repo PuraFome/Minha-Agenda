@@ -1,0 +1,73 @@
+import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { TaskService } from '../game/task.service';
+import { DIFFICULTIES, Difficulty, Task, XP_TABLE } from '../game/game.types';
+
+@Component({
+  selector: 'app-task-form',
+  imports: [FormsModule],
+  templateUrl: './task-form.component.html',
+  styleUrl: './task-form.component.scss',
+})
+export class TaskFormComponent {
+  private readonly taskService = inject(TaskService);
+
+  /** Tarefa pendente em edição. Quando ausente, o formulário cria uma nova tarefa. */
+  readonly task = input<Task | null>(null);
+
+  /** Emitido após salvar (criar ou editar). */
+  readonly saved = output<void>();
+
+  readonly difficulties = DIFFICULTIES;
+  readonly xpTable = XP_TABLE;
+
+  readonly difficultyLabels: Record<Difficulty, string> = {
+    facil: 'Fácil',
+    media: 'Média',
+    dificil: 'Difícil',
+    'muito-dificil': 'Muito difícil',
+    epica: 'Épica',
+  };
+
+  readonly title = signal('');
+  readonly difficulty = signal<Difficulty>('facil');
+  readonly dueDate = signal('');
+
+  readonly isEditing = computed(() => this.task() !== null);
+  readonly trimmedTitle = computed(() => this.title().trim());
+  readonly canSubmit = computed(() => this.trimmedTitle().length > 0);
+
+  constructor() {
+    // Pré-preenche o formulário ao entrar em modo de edição; zera no modo de criação.
+    effect(() => {
+      const current = this.task();
+      if (current) {
+        this.title.set(current.title);
+        this.difficulty.set(current.difficulty);
+        this.dueDate.set(current.dueDate ?? '');
+      } else {
+        this.title.set('');
+        this.difficulty.set('facil');
+        this.dueDate.set('');
+      }
+    });
+  }
+
+  onSubmit(): void {
+    if (!this.canSubmit()) {
+      return;
+    }
+    const due = this.dueDate().trim() || null;
+    const current = this.task();
+    if (current) {
+      this.taskService.editTask(current.id, {
+        title: this.trimmedTitle(),
+        difficulty: this.difficulty(),
+        dueDate: due,
+      });
+    } else {
+      this.taskService.addTask(this.trimmedTitle(), this.difficulty(), due);
+    }
+    this.saved.emit();
+  }
+}

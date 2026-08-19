@@ -1,0 +1,83 @@
+@if (hero(); as currentHero) {
+  <article class="hero-card" aria-labelledby="hero-name">
+    <header class="hero-card__header">
+      <div class="hero-card__identity">
+        @if (isEditing()) {
+          <input
+            #nameInput
+            type="text"
+            [(ngModel)]="editName"
+            (keydown)="onKeydown($event)"
+            class="hero-card__edit-input"
+            aria-label="Editar nome do herói"
+            autofocus
+          />
+        } @else {
+          <h2 id="hero-name" class="hero-card__name">{{ currentHero.name }}</h2>
+        }
+        <div class="hero-card__class">
+          <span class="hero-card__class-icon" aria-hidden="true">{{ classIcons[heroClass()!] }}</span>
+          <span class="hero-card__class-label">{{ classLabels[heroClass()!] }}</span>
+        </div>
+      </div>
+
+      <div class="hero-card__level">
+        <span class="hero-card__level-badge" aria-label="Nível {{ level() }}">Nv. {{ level() }}</span>
+      </div>
+    </header>
+
+    <div class="hero-card__xp">
+      <div class="hero-card__xp-header">
+        <span class="hero-card__xp-label">XP</span>
+        <span class="hero-card__xp-values">
+          {{ totalXp() }} / {{ totalXp() + xpForNextLevel() }}
+        </span>
+      </div>
+      <div class="hero-card__xp-bar" role="progressbar" aria-valuenow="{{ progress() }}" aria-valuemin="0" aria-valuemax="99" aria-label="Progresso para o próximo nível">
+        <div
+          class="hero-card__xp-fill"
+          [style.width.%]="progress()"
+        ></div>
+      </div>
+      <p class="hero-card__xp-hint">{{ xpForNextLevel() }} XP para o próximo nível</p>
+    </div>
+
+    <footer class="hero-card__actions">
+      @if (!isEditing()) {
+        <button
+          type="button"
+          class="hero-card__edit-btn"
+          (click)="startEditing()"
+          aria-label="Editar nome do herói"
+        >
+          <svg class="hero-card__edit-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+          </svg>
+        </button>
+      } @else {
+        <button
+          type="button"
+          class="hero-card__save-btn"
+          (click)="saveName()"
+          aria-label="Salvar nome"
+        >
+          <svg class="hero-card__save-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </button>
+        <button
+          type="button"
+          class="hero-card__cancel-btn"
+          (click)="cancelEditing()"
+          aria-label="Cancelar edição"
+        >
+          <svg class="hero-card__cancel-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      }
+    </footer>
+  </article>
+}

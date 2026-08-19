@@ -71,3 +71,45 @@ Verifique o status do hook a qualquer momento:
 graphify hook status
 ```
 
+## Estado atual do projeto (contexto entre sessões)
+
+- **Projeto**: "Minha Agenda" — app Angular 21 standalone + signals + SCSS.
+- **Tela home implementada** com header sticky (branding + botão toggle de tema no
+  canto superior direito), footer com copyright dinâmico e conteúdo hero + feature cards.
+- **Tema claro/escuro**: `ThemeService` (`src/app/theme/theme.service.ts`) com signal
+  `preference` ('light' | 'dark' | 'system'), `computed` `theme`, `toggle()` e
+  `followSystem()`. Segue o tema do SO via `matchMedia('(prefers-color-scheme: dark)')`
+  reagindo ao vivo; escolha manual persiste em `localStorage` (key `theme`); aplica
+  `data-theme` no `<html>`. Script inline anti-FOUC no `index.html`.
+- **Design tokens** em `src/styles.scss`: CSS custom properties por tema
+  (`--color-bg/surface/text/border/primary/accent`, sombras, espaçamento, raios),
+  direção "papel editorial" (creme+terracota claro / carvão+brasa escuro),
+  `prefers-reduced-motion` respeitado.
+- **Estrutura de pastas**: `src/app/layout/` (header, footer), `src/app/pages/home/`,
+  `src/app/theme/`.
+- **Rotas**: `''` → HomeComponent, `'**'` → redirect `''`.
+- **Layout shell**: `App` (app.ts) renderiza `<app-header />` + `<main><router-outlet /></main>` + `<app-footer />`.
+- **Build/testes**: `npx ng build` OK; `npx ng test --watch=false` OK (2/2).
+- **Git**: commit inicial `424ad57` feito. Nada pendente de commit no momento
+  (verificar `git status` antes de continuar).
+
+## Validação visual com Playwright (OBRIGATÓRIA após mudanças de UI)
+
+Qualquer alteração de UI (layout, tema, componentes, estilos) DEVE ser validada com
+o Playwright MCP antes de ser declarada concluída:
+
+1. Subir o dev server:
+
+   ```
+   Start-Process -FilePath "npx.cmd" -ArgumentList "ng","serve","--port","4200","--host","127.0.0.1" -WorkingDirectory "C:\Users\Pura Fome\Documents\portifolio\Minha-Agenda" -WindowStyle Hidden
+   ```
+
+2. Usar a skill `/playwright` e navegar para `http://127.0.0.1:4200/`.
+3. Verificar: header com toggle no canto superior direito, conteúdo da rota, footer.
+4. **Testar o toggle de tema**: clicar no botão, confirmar que `data-theme` no `<html>`
+   muda entre `light`/`dark` e que o localStorage (key `theme`) persiste o valor.
+5. Capturar screenshots (`browser_take_screenshot`) dos dois temas para conferência visual.
+6. Rodar `browser_console_messages` com nível `error` — não pode haver erros de console.
+
+Artefatos do Playwright ficam em `.playwright-mcp/` (ignorado pelo git).
+

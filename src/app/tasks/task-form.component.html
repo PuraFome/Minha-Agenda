@@ -1,0 +1,52 @@
+<form (ngSubmit)="onSubmit()" class="task-form" novalidate>
+  <div class="task-form__field">
+    <label for="task-title" class="task-form__label">Título</label>
+    <input
+      id="task-title"
+      type="text"
+      [(ngModel)]="title"
+      name="title"
+      class="task-form__input"
+      placeholder="O que precisa ser feito?"
+      required
+    />
+  </div>
+
+  <div class="task-form__field">
+    <label for="task-difficulty" class="task-form__label">Dificuldade</label>
+    <select
+      id="task-difficulty"
+      [(ngModel)]="difficulty"
+      name="difficulty"
+      class="task-form__select"
+    >
+      @for (diff of difficulties; track diff) {
+        <option [ngValue]="diff">
+          {{ difficultyLabels[diff] }} (+{{ xpTable[diff] }} XP)
+        </option>
+      }
+    </select>
+  </div>
+
+  <div class="task-form__field">
+    <label for="task-due-date" class="task-form__label">Data limite (opcional)</label>
+    <input
+      id="task-due-date"
+      type="date"
+      [(ngModel)]="dueDate"
+      name="dueDate"
+      class="task-form__input"
+    />
+  </div>
+
+  <div class="task-form__actions">
+    <button
+      type="submit"
+      class="task-form__submit"
+      [disabled]="!canSubmit()"
+      [attr.aria-disabled]="!canSubmit()"
+    >
+      {{ isEditing() ? 'Salvar alterações' : 'Adicionar tarefa' }}
+    </button>
+  </div>
+</form>

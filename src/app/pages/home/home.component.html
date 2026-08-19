@@ -1,0 +1,12 @@
+<main class="home">
+  @if (hero() === null) {
+    <app-hero-setup />
+  } @else {
+    <div class="home__dashboard">
+      <app-hero-card />
+      <app-task-form />
+      <app-task-list />
+    </div>
+    <app-level-up />
+  }
+</main>

@@ -1,0 +1,11 @@
+.home {
+  width: 100%;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: var(--space-7) var(--space-5) var(--space-8);
+}
+
+.home__dashboard {
+  display: grid;
+  gap: var(--space-6);
+}
