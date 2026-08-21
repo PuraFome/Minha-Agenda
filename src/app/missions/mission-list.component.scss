@@ -1,5 +1,7 @@
 .mission-list {
-  --muted: color-mix(in srgb, var(--mural-text) 75%, var(--mural-card-bg));
+  --muted: color-mix(in srgb, var(--mural-text) 72%, var(--mural-card-bg));
+  --parchment: var(--mural-card-bg);
+  --ink: var(--mural-text);
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
@@ -16,89 +18,116 @@
   }
 
   &__title {
+    font-family: var(--font-display);
     font-size: 1.75rem;
     font-weight: 700;
-    color: var(--mural-text);
+    letter-spacing: 0.03em;
+    color: var(--ink);
+    text-shadow: 0 1px 0 rgb(255 255 255 / 0.4);
   }
 
   &__subtitle {
+    font-family: var(--font-rune);
     font-size: 0.9375rem;
     color: var(--muted);
   }
 
   &__new-btn {
     padding: var(--space-2) var(--space-5);
+    font-family: var(--font-display);
     font-size: 0.9375rem;
     font-weight: 600;
-    color: var(--color-primary-contrast);
-    background: var(--color-primary);
-    border: none;
-    border-radius: var(--radius-full);
+    letter-spacing: 0.02em;
+    color: #fff3e0;
+    background: linear-gradient(180deg, var(--mural-accent), color-mix(in srgb, var(--mural-accent) 75%, #000));
+    border: 1px solid color-mix(in srgb, var(--mural-accent) 60%, #000);
+    border-radius: var(--radius-sm);
     cursor: pointer;
+    box-shadow: var(--shadow-sm), inset 0 1px 0 rgb(255 255 255 / 0.25);
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+    transition: var(--transition-colors), transform 0.15s ease;
 
-    &:hover { background: var(--color-primary-hover); }
+    &:hover { transform: translateY(-1px); filter: brightness(1.08); }
   }
 
-  &__section {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-  }
+  &__section { display: flex; flex-direction: column; gap: var(--space-3); }
 
   &__section-title {
     padding-bottom: var(--space-2);
+    font-family: var(--font-display);
     font-size: 1.125rem;
     font-weight: 700;
-    color: var(--mural-text);
-    border-bottom: 1px solid var(--mural-card-border);
+    letter-spacing: 0.02em;
+    color: var(--ink);
+    border-bottom: 2px solid var(--mural-card-border);
   }
 
   &__empty {
     padding: var(--space-5);
     text-align: center;
+    font-family: var(--font-rune);
     color: var(--muted);
   }
 
   &__items {
     display: flex;
     flex-direction: column;
-    gap: var(--space-2);
+    gap: var(--space-3);
     padding: 0;
     margin: 0;
     list-style: none;
   }
 
   &__item {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-4);
-    padding: var(--space-3) var(--space-4);
-    background: var(--mural-card-bg);
+    padding: var(--space-3) var(--space-4) var(--space-3) var(--space-6);
+    background: var(--parchment-bg);
     border: 1px solid var(--mural-card-border);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 10px;
+      top: 8px;
+      bottom: 8px;
+      width: 3px;
+      background: repeating-linear-gradient(180deg, #8a5a33 0 4px, #6f4423 4px 8px);
+      border-radius: 2px;
+      opacity: 0.6;
+    }
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
 
     &--overdue {
-      border-color: color-mix(in srgb, var(--color-primary) 45%, var(--mural-card-border));
+      border-color: color-mix(in srgb, var(--color-primary) 50%, var(--mural-card-border));
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 30%, transparent), var(--shadow-sm);
     }
 
     &--completed {
-      opacity: 0.75;
+      opacity: 0.8;
+      &::before { opacity: 0.3; }
     }
   }
 
-  &__item-main {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-  }
+  &__item-main { display: flex; flex-direction: column; gap: var(--space-1); }
 
   &__item-title {
     font-weight: 600;
-    color: var(--mural-text);
+    font-size: 1.0625rem;
+    color: var(--ink);
   }
 
-  &__item--completed &__item-title { text-decoration: line-through; }
+  &__item--completed &__item-title { text-decoration: line-through; opacity: 0.7; }
 
   &__item-meta {
     display: flex;
@@ -109,6 +138,7 @@
 
   &__retention-hint {
     font-size: 0.75rem;
+    font-family: var(--font-rune);
     color: var(--muted);
   }
 
@@ -117,38 +147,30 @@
     display: inline-flex;
     align-items: center;
     padding: var(--space-1) var(--space-3);
+    font-family: var(--font-rune);
     font-size: 0.75rem;
     font-weight: 600;
-    color: var(--badge-color);
-    background: color-mix(in srgb, var(--badge-color) 14%, var(--mural-card-bg));
+    color: #fff;
+    background: color-mix(in srgb, var(--badge-color) 65%, #1a0d04);
+    border: 1px solid color-mix(in srgb, var(--badge-color) 55%, #000);
     border-radius: var(--radius-full);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25), 0 1px 2px rgb(0 0 0 / 0.3);
 
-    &--facil {
-      --badge-color: var(--color-accent);
-    }
+    &--facil { --badge-color: var(--color-accent); }
+    &--media { --badge-color: color-mix(in srgb, var(--color-accent) 70%, var(--color-primary)); }
+    &--dificil { --badge-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-primary)); }
+    &--muito-dificil { --badge-color: color-mix(in srgb, var(--color-accent) 20%, var(--color-primary)); }
+    &--epica { --badge-color: var(--color-primary); }
+  }
 
-    &--media {
-      --badge-color: color-mix(in srgb, var(--color-accent) 70%, var(--color-primary));
-    }
-
-    &--dificil {
-      --badge-color: color-mix(in srgb, var(--color-accent) 45%, var(--color-primary));
-    }
-
-    &--muito-dificil {
-      --badge-color: color-mix(in srgb, var(--color-accent) 20%, var(--color-primary));
-    }
-
-    &--epica {
-      --badge-color: var(--color-primary);
-    }
+  [data-theme='dark'] &__badge {
+    box-shadow: 0 0 8px color-mix(in srgb, var(--badge-color) 45%, transparent), inset 0 1px 0 rgb(255 255 255 / 0.25);
   }
 
   &__due {
     font-size: 0.8125rem;
     color: var(--muted);
-
-    &--overdue { font-weight: 700; color: color-mix(in srgb, var(--color-primary) 70%, var(--mural-text)); }
+    &--overdue { font-weight: 700; color: color-mix(in srgb, var(--color-primary) 70%, var(--ink)); }
   }
 
   &__overdue-tag {
@@ -157,16 +179,12 @@
     font-size: 0.6875rem;
     font-weight: 700;
     text-transform: uppercase;
-    color: var(--color-primary-contrast);
+    color: #fff3e0;
     background: var(--color-primary);
     border-radius: var(--radius-full);
   }
 
-  &__actions {
-    display: flex;
-    align-items: center;
-    gap: var(--space-1);
-  }
+  &__actions { display: flex; align-items: center; gap: var(--space-1); }
 
   &__action-btn {
     display: inline-flex;
@@ -175,29 +193,20 @@
     width: 34px;
     height: 34px;
     padding: 0;
-    color: var(--color-text);
-    background: var(--color-surface-muted);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
+    color: var(--ink);
+    background: radial-gradient(circle at 35% 30%, #6b4423, #4a2e16);
+    border: 1px solid #3a2410;
+    border-radius: 50%;
     cursor: pointer;
+    box-shadow: inset 0 1px 0 rgb(255 200 140 / 0.2), var(--shadow-sm);
+    transition: transform 0.15s ease, filter 0.15s ease;
 
-    &:hover { background: var(--color-border); }
+    &:hover { transform: scale(1.1); filter: brightness(1.15); }
 
-    &--complete {
-      color: var(--color-accent);
-    }
-
-    &--undo {
-      color: var(--muted);
-    }
-
-    &--danger {
-      color: var(--color-primary);
-    }
+    &--complete { color: var(--color-accent); }
+    &--undo { color: var(--muted); }
+    &--danger { color: var(--color-primary); }
   }
 
-  &__action-icon {
-    width: 16px;
-    height: 16px;
-  }
+  &__action-icon { width: 16px; height: 16px; }
 }

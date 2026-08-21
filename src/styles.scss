@@ -4,6 +4,8 @@
    / carvão-quente + brasa (escuro)
    ============================================================ */
 
+/* Fontes temáticas (RPG medieval) — carregadas via <link> em index.html */
+
 @mixin theme-dark {
   color-scheme: dark;
 
@@ -24,6 +26,10 @@
   --mural-card-border: var(--color-border);
   --mural-accent: var(--color-primary);
   --mural-text: var(--color-text);
+
+  /* Madeira RPG em modo escuro */
+  --wood-1: #4a3320;
+  --wood-2: #2e1f12;
 
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
   --shadow-md: 0 6px 20px rgb(0 0 0 / 0.45);
@@ -52,6 +58,21 @@
   --mural-accent: #c05621;
   --mural-text: #3a2c1a;
 
+  /* Texturas RPG — madeira, pergaminho, cera, fogo */
+  --wood-1: #9c6b3f;
+  --wood-2: #7a4f2c;
+  --wood-grain:
+    repeating-linear-gradient(0deg, rgb(0 0 0 / 0.16) 0 2px, transparent 2px 110px),
+    repeating-linear-gradient(90deg, rgb(0 0 0 / 0.05) 0 1px, transparent 1px 6px),
+    linear-gradient(180deg, var(--wood-1), var(--wood-2));
+  --parchment-bg:
+    radial-gradient(circle at 18% 22%, rgb(150 110 60 / 0.1), transparent 42%),
+    radial-gradient(circle at 82% 78%, rgb(120 80 40 / 0.08), transparent 46%),
+    var(--mural-card-bg);
+  --seal-bg: radial-gradient(circle at 35% 30%, #c0392b, #7b1414 68%, #5a0f0f);
+  --ornate-ring: inset 0 0 0 2px rgb(150 117 60 / 0.18);
+  --torch-glow: radial-gradient(circle, rgb(255 170 70 / 0.3), rgb(255 140 40 / 0.1) 45%, transparent 70%);
+
   /* Sombras */
   --shadow-sm: 0 1px 2px rgb(43 36 23 / 0.08);
   --shadow-md: 0 6px 20px rgb(43 36 23 / 0.1);
@@ -60,6 +81,10 @@
   /* Tipografia */
   --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: ui-monospace, 'Cascadia Code', 'Segoe UI Mono', monospace;
+  --font-display: 'Cinzel', 'Times New Roman', serif;
+  --font-rpg: 'MedievalSharp', 'Cinzel', serif;
+  --font-rune: 'MedievalSharp', 'Cinzel', serif;
+  --font-uncial: 'Uncial Antiqua', 'Cinzel', serif;
 
   /* Espaçamento (grade de 4px) */
   --space-1: 4px;

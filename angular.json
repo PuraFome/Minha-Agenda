@@ -73,6 +73,9 @@
           "options": {
             "runnerConfig": true
           }
+        },
+        "deploy": {
+          "builder": "angular-cli-ghpages:deploy"
         }
       }
     }
