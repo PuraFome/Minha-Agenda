@@ -1,10 +1,14 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { AuthService } from '../../core/auth.service';
 import { GameService } from '../../game/game.service';
 import { MissionService } from '../../game/mission.service';
 import { SettingsService } from '../../game/settings.service';
 import { HeroCardComponent } from '../../hero/hero-card.component';
 import { HeroSetupComponent } from '../../hero/hero-setup.component';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-perfil',
@@ -13,12 +17,25 @@ import { HeroSetupComponent } from '../../hero/hero-setup.component';
   styleUrl: './perfil.component.scss',
 })
 export class PerfilComponent {
+  private readonly auth = inject(AuthService);
   private readonly gameService = inject(GameService);
   private readonly missionService = inject(MissionService);
   private readonly settingsService = inject(SettingsService);
+  private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
 
   readonly hero = this.gameService.hero;
+  readonly user = this.auth.user;
+  readonly imgFailed = signal(false);
+  readonly userInitials = computed(() => {
+    const u = this.user();
+    if (!u) return '?';
+    const source = (u.name ?? '').trim() || u.email || '';
+    const parts = source.split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return '?';
+    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  });
   readonly level = this.gameService.level;
   readonly totalXp = computed(() => this.hero()?.totalXp ?? 0);
   readonly completedCount = computed(() => this.missionService.completedTasks().length);
@@ -40,5 +57,21 @@ export class PerfilComponent {
     const days = Number((event.target as HTMLSelectElement).value);
     this.settingsService.setRetentionDays(days);
     this.missionService.purgeExpired();
+  }
+
+  async deleteAccount(): Promise<void> {
+    if (!window.confirm('Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+    try {
+      await firstValueFrom(
+        this.http.delete<void>(`${environment.apiUrl}/api/auth/account`, { withCredentials: true }),
+      );
+      this.auth.user.set(null);
+      localStorage.clear();
+      this.router.navigate(['/login']);
+    } catch (err) {
+      console.error('Falha ao excluir conta', err);
+    }
   }
 }

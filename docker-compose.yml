@@ -1,0 +1,32 @@
+# Minha-Agenda — backend service
+# Builds the NestJS API image from ./server and runs it with the
+# environment from ./server/.env (secrets stay on the host, not in the image).
+#
+# Usage:
+#   docker compose up --build        # build + run
+#   docker compose up -d --build     # detached
+#   docker compose logs -f backend   # follow logs
+#   docker compose down              # stop + remove
+#
+# The API listens on :3000 and the Google OAuth callback is
+# ${API_PUBLIC_URL}/api/auth/callback (currently http://localhost:3000).
+# Run the Angular frontend separately (npm start) on :4200.
+
+services:
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    image: minha-agenda-backend:local
+    container_name: minha-agenda-backend
+    env_file:
+      - ./server/.env
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s

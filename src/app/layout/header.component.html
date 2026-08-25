@@ -8,11 +8,27 @@
     <a class="nav__link" routerLink="/" routerLinkActive="nav__link--active" [routerLinkActiveOptions]="{ exact: true }">Mural</a>
     <a class="nav__link" routerLink="/nova-missao" routerLinkActive="nav__link--active">Nova Missão</a>
     <a class="nav__link" routerLink="/perfil" routerLinkActive="nav__link--active">Perfil</a>
-  </nav>
+    </nav>
 
-  <button
-    type="button"
-    class="theme-toggle"
+    @if (user(); as u) {
+      <a
+        class="avatar"
+        routerLink="/perfil"
+        [attr.aria-label]="'Perfil de ' + (u.name || u.email)"
+      >
+        @if (u.picture) {
+          <img class="avatar__img" [src]="u.picture" [alt]="u.name || 'Foto do perfil'" />
+        } @else {
+          <span class="avatar__fallback">{{ userInitials() }}</span>
+        }
+      </a>
+    } @else {
+      <a class="nav__login" routerLink="/login">Entrar</a>
+    }
+
+    <button
+      type="button"
+      class="theme-toggle"
     (click)="toggleTheme()"
     [attr.aria-label]="themeLabel()"
     [attr.title]="themeLabel()"

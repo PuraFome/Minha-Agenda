@@ -1,12 +1,35 @@
-import { TestBed } from '@angular/core/testing';
+import '@angular/compiler';
+import { Injector, runInInjectionContext } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { of, throwError } from 'rxjs';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GameService } from './game.service';
+import { ApiService } from '../core/api.service';
 import { Hero, XP_TABLE } from './game.types';
 
 describe('GameService', () => {
-  let service: GameService;
   let mockLocalStorage: Record<string, string>;
   let mockDocument: Document;
+  let mockApi: {
+    getHero: ReturnType<typeof vi.fn>;
+    putHero: ReturnType<typeof vi.fn>;
+    addXp: ReturnType<typeof vi.fn>;
+    deleteHero: ReturnType<typeof vi.fn>;
+  };
+  let injector: Injector;
+  let service: GameService;
+
+  function buildService(): GameService {
+    injector = Injector.create({
+      providers: [
+        { provide: DOCUMENT, useValue: mockDocument },
+        { provide: HttpClient, useValue: {} },
+        { provide: ApiService, useValue: mockApi },
+      ],
+    });
+    return runInInjectionContext(injector, () => new GameService());
+  }
 
   beforeEach(() => {
     mockLocalStorage = {};
@@ -28,16 +51,23 @@ describe('GameService', () => {
       },
     } as unknown as Document;
 
-    TestBed.configureTestingModule({
-      providers: [GameService, { provide: DOCUMENT, useValue: mockDocument }],
-    });
+    mockApi = {
+      getHero: vi.fn(() => of(null)),
+      putHero: vi.fn(() => of(undefined)),
+      addXp: vi.fn(() => of(undefined)),
+      deleteHero: vi.fn(() => of(undefined)),
+    };
 
-    service = TestBed.inject(GameService);
+    service = buildService();
   });
 
   describe('initial state', () => {
     it('should be null when no hero in localStorage', () => {
       expect(service.hero()).toBeNull();
+    });
+
+    it('should call api.getHero on construction', () => {
+      expect(mockApi.getHero).toHaveBeenCalledTimes(1);
     });
 
     it('should load hero from localStorage on init', () => {
@@ -48,29 +78,44 @@ describe('GameService', () => {
       };
       mockLocalStorage['ma.hero.v1'] = JSON.stringify(hero);
 
-      TestBed.resetTestingModule();
-      TestBed.configureTestingModule({
-        providers: [GameService, { provide: DOCUMENT, useValue: mockDocument }],
-      });
-
-      const hydrated = TestBed.inject(GameService);
+      const hydrated = buildService();
       expect(hydrated.hero()).toEqual(hero);
+    });
+
+    it('should override localStorage with backend hero on getHero success', () => {
+      const backendHero: Hero = {
+        name: 'Backend Hero',
+        heroClass: 'mago',
+        totalXp: 300,
+      };
+      mockApi.getHero = vi.fn(() => of(backendHero));
+
+      const hydrated = buildService();
+      expect(hydrated.hero()).toEqual(backendHero);
+      expect(JSON.parse(mockLocalStorage['ma.hero.v1']!)).toEqual(backendHero);
+    });
+
+    it('should keep cache on getHero error (401/network)', () => {
+      const cached: Hero = {
+        name: 'Cached Hero',
+        heroClass: 'ladino',
+        totalXp: 75,
+      };
+      mockLocalStorage['ma.hero.v1'] = JSON.stringify(cached);
+      mockApi.getHero = vi.fn(() => throwError(() => new Error('401')));
+
+      const hydrated = buildService();
+      expect(hydrated.hero()).toEqual(cached);
     });
 
     it('should handle corrupted localStorage gracefully', () => {
       mockLocalStorage['ma.hero.v1'] = 'invalid json';
 
-      TestBed.resetTestingModule();
-      TestBed.configureTestingModule({
-        providers: [GameService, { provide: DOCUMENT, useValue: mockDocument }],
-      });
-
-      const hydrated = TestBed.inject(GameService);
+      const hydrated = buildService();
       expect(hydrated.hero()).toBeNull();
     });
 
     it('should handle unavailable localStorage gracefully', () => {
-      TestBed.resetTestingModule();
       const brokenDocument = {
         defaultView: {
           localStorage: {
@@ -81,11 +126,15 @@ describe('GameService', () => {
         },
       } as unknown as Document;
 
-      TestBed.configureTestingModule({
-        providers: [GameService, { provide: DOCUMENT, useValue: brokenDocument }],
+      injector = Injector.create({
+        providers: [
+          { provide: DOCUMENT, useValue: brokenDocument },
+          { provide: HttpClient, useValue: {} },
+          { provide: ApiService, useValue: mockApi },
+        ],
       });
+      const resilient = runInInjectionContext(injector, () => new GameService());
 
-      const resilient = TestBed.inject(GameService);
       expect(resilient.hero()).toBeNull();
     });
   });
@@ -108,6 +157,15 @@ describe('GameService', () => {
       expect(stored.name).toBe('Legolas');
       expect(stored.heroClass).toBe('mago');
       expect(stored.totalXp).toBe(0);
+    });
+
+    it('should call api.putHero with the new hero', () => {
+      service.createHero('Aragorn', 'guerreiro');
+      expect(mockApi.putHero).toHaveBeenCalledWith({
+        name: 'Aragorn',
+        heroClass: 'guerreiro',
+        totalXp: 0,
+      });
     });
 
     it('should overwrite an existing hero', () => {
@@ -136,6 +194,11 @@ describe('GameService', () => {
       expect(service.hero()!.totalXp).toBe(50);
     });
 
+    it('should call api.addXp with the delta', () => {
+      service.addXp(50);
+      expect(mockApi.addXp).toHaveBeenCalledWith(50);
+    });
+
     it('should persist updated XP to localStorage', () => {
       service.addXp(75);
       const stored = JSON.parse(mockLocalStorage['ma.hero.v1']!);
@@ -146,6 +209,7 @@ describe('GameService', () => {
       service.resetHero();
       expect(() => service.addXp(10)).not.toThrow();
       expect(service.hero()).toBeNull();
+      expect(mockApi.addXp).not.toHaveBeenCalled();
     });
 
     it('should subtract XP on negative amount (undo)', () => {
@@ -219,6 +283,14 @@ describe('GameService', () => {
       expect(mockLocalStorage['ma.hero.v1']).toBeUndefined();
     });
 
+    it('should call api.deleteHero', () => {
+      service.createHero('Test Hero', 'guerreiro');
+      mockApi.deleteHero.mockClear();
+
+      service.resetHero();
+      expect(mockApi.deleteHero).toHaveBeenCalledTimes(1);
+    });
+
     it('should reset derived values to defaults', () => {
       service.createHero('Test Hero', 'guerreiro');
       service.addXp(250);
@@ -227,6 +299,47 @@ describe('GameService', () => {
       expect(service.level()).toBe(1);
       expect(service.progress()).toBe(0);
       expect(service.xpForNextLevel()).toBe(100);
+    });
+  });
+
+  describe('updateHeroName', () => {
+    beforeEach(() => {
+      service.createHero('Test Hero', 'guerreiro');
+    });
+
+    it('should update only the name, preserving class and XP', () => {
+      service.addXp(120);
+      service.updateHeroName('  Strider  ');
+
+      const hero = service.hero();
+      expect(hero!.name).toBe('Strider');
+      expect(hero!.heroClass).toBe('guerreiro');
+      expect(hero!.totalXp).toBe(120);
+    });
+
+    it('should persist updated name to localStorage', () => {
+      service.updateHeroName('Frodo');
+      const stored = JSON.parse(mockLocalStorage['ma.hero.v1']!);
+      expect(stored.name).toBe('Frodo');
+    });
+
+    it('should call api.putHero with the updated hero', () => {
+      service.addXp(40);
+      mockApi.putHero.mockClear();
+
+      service.updateHeroName('Frodo');
+      expect(mockApi.putHero).toHaveBeenCalledWith({
+        name: 'Frodo',
+        heroClass: 'guerreiro',
+        totalXp: 40,
+      });
+    });
+
+    it('should not throw when no hero exists', () => {
+      service.resetHero();
+      mockApi.putHero.mockClear();
+      expect(() => service.updateHeroName('Ghost')).not.toThrow();
+      expect(mockApi.putHero).not.toHaveBeenCalled();
     });
   });
 
