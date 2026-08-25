@@ -6,7 +6,6 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './db/database.module';
 import { AuthModule } from './auth/auth.module';
-import { DataModule } from './data/data.module';
 import { SettingsModule } from './settings/settings.module';
 import { HeroModule } from './hero/hero.module';
 import { MissionsModule } from './missions/missions.module';
@@ -30,7 +29,6 @@ import { MissionsModule } from './missions/missions.module';
     ]),
     DatabaseModule,
     AuthModule,
-    DataModule,
     SettingsModule,
     HeroModule,
     MissionsModule,
