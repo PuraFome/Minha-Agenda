@@ -8,6 +8,7 @@ import { DatabaseModule } from './db/database.module';
 import { AuthModule } from './auth/auth.module';
 import { DataModule } from './data/data.module';
 import { SettingsModule } from './settings/settings.module';
+import { HeroModule } from './hero/hero.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { SettingsModule } from './settings/settings.module';
     AuthModule,
     DataModule,
     SettingsModule,
+    HeroModule,
   ],
   controllers: [AppController],
   providers: [
