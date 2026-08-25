@@ -25,6 +25,9 @@ export interface PendingMissionRow {
  * - Edição só é permitida em missões pendentes.
  * - Retenção: missões concluídas são removidas após `retentionDays` dias
  *   (0 = manter para sempre); o purge nunca altera o XP do herói.
+ * - Backend (ApiService) é a fonte de verdade quando disponível; 401/erro
+ *   mantém o valor do localStorage. Mutações aplicam otimisticamente em
+ *   memória e sincronizam com o backend de forma silenciosa.
  */
 @Injectable({ providedIn: 'root' })
 export class MissionService {
@@ -32,18 +35,17 @@ export class MissionService {
   private readonly gameService = inject(GameService);
   private readonly settingsService = inject(SettingsService);
   private readonly api = inject(ApiService);
-  private syncTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** Todas as missões, na ordem de criação. */
   readonly tasks = signal<Mission[]>(this.readStoredMissions());
 
   constructor() {
     // Backend wins over localStorage when present; 401/network → keep local value.
-    this.api.getCollection('missions').subscribe({
-      next: (payload) => {
-        if (Array.isArray(payload)) {
-          this.tasks.set(payload as Mission[]);
-          this.writeStoredMissions(payload as Mission[]);
+    this.api.listMissions().subscribe({
+      next: (missions) => {
+        if (Array.isArray(missions)) {
+          this.tasks.set(missions);
+          this.writeStoredMissions(missions);
         }
       },
       error: () => {
@@ -84,6 +86,7 @@ export class MissionService {
     };
     this.tasks.update((missions) => [...missions, mission]);
     this.persist();
+    this.api.createMission(mission).subscribe({ error: () => {} });
   }
 
   /** Edita título/dificuldade/data de uma missão pendente. Missões concluídas são ignoradas. */
@@ -91,12 +94,15 @@ export class MissionService {
     id: string,
     updates: Partial<Pick<Mission, 'title' | 'difficulty' | 'dueDate'>>,
   ): void {
+    const target = this.tasks().find((mission) => mission.id === id && !mission.completed);
+    if (!target) {
+      return;
+    }
     this.tasks.update((missions) =>
-      missions.map((mission) =>
-        mission.id === id && !mission.completed ? { ...mission, ...updates } : mission,
-      ),
+      missions.map((mission) => (mission.id === id ? { ...mission, ...updates } : mission)),
     );
     this.persist();
+    this.api.updateMission(id, updates).subscribe({ error: () => {} });
   }
 
   /** Conclui a missão, marca completedAt e concede o XP correspondente. */
@@ -112,6 +118,7 @@ export class MissionService {
       ),
     );
     this.persist();
+    this.api.setMissionComplete(id, true).subscribe({ error: () => {} });
   }
 
   /** Desfaz a conclusão, subtrai o XP concedido e libera a edição. */
@@ -125,12 +132,18 @@ export class MissionService {
       missions.map((m) => (m.id === id ? { ...m, completed: false, completedAt: null } : m)),
     );
     this.persist();
+    this.api.setMissionComplete(id, false).subscribe({ error: () => {} });
   }
 
   /** Remove a missão. Se concluída, o XP já ganho permanece. */
   deleteMission(id: string): void {
+    const exists = this.tasks().some((mission) => mission.id === id);
+    if (!exists) {
+      return;
+    }
     this.tasks.update((missions) => missions.filter((m) => m.id !== id));
     this.persist();
+    this.api.deleteMission(id).subscribe({ error: () => {} });
   }
 
   /**
@@ -144,7 +157,6 @@ export class MissionService {
     if (purged.length !== current.length) {
       this.tasks.set(purged);
       this.writeStoredMissions(purged);
-      this.scheduleSync('missions', () => this.tasks());
     }
   }
 
@@ -263,7 +275,6 @@ export class MissionService {
   private persist(): void {
     this.purgeExpired();
     this.writeStoredMissions(this.tasks());
-    this.scheduleSync('missions', () => this.tasks());
   }
 
   private writeStoredMissions(missions: Mission[]): void {
@@ -275,15 +286,5 @@ export class MissionService {
     } catch {
       // Falha silenciosa: o estado continua funcionando em memória.
     }
-  }
-
-  private scheduleSync(name: string, payloadFactory: () => unknown): void {
-    if (this.syncTimer !== null) {
-      clearTimeout(this.syncTimer);
-    }
-    this.syncTimer = setTimeout(() => {
-      this.syncTimer = null;
-      this.api.putCollection(name, payloadFactory()).subscribe({ error: () => {} });
-    }, 500);
   }
 }
