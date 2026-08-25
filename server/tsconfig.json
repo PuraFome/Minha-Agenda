@@ -14,5 +14,6 @@
     "lib": ["es2021"],
     "types": ["node"],
     "declaration": false
-  }
+  },
+  "exclude": ["node_modules", "dist", "scripts"]
 }
