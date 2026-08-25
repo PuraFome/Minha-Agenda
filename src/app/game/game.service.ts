@@ -15,14 +15,13 @@ const HERO_STORAGE_KEY = 'ma.hero.v1';
 export class GameService {
   private readonly document = inject(DOCUMENT);
   private readonly api = inject(ApiService);
-  private syncTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** Herói atual — null enquanto o usuário não criou um (fluxo de primeiro acesso). */
   readonly hero = signal<Hero | null>(this.readStoredHero());
 
   constructor() {
     // Backend wins over localStorage when present; 401/network → keep local value.
-    this.api.getCollection('hero').subscribe({
+    this.api.getHero().subscribe({
       next: (payload) => {
         if (this.isValidHero(payload)) {
           this.hero.set(payload);
@@ -55,7 +54,7 @@ export class GameService {
     const hero: Hero = { name, heroClass, totalXp: 0 };
     this.hero.set(hero);
     this.writeStoredHero(hero);
-    this.scheduleSync('hero', () => this.hero());
+    this.api.putHero(hero).subscribe({ error: () => {} });
   }
 
   /** Adiciona (ou subtrai, com amount negativo) XP do herói. Nunca fica abaixo de 0. */
@@ -67,13 +66,14 @@ export class GameService {
     const updated: Hero = { ...hero, totalXp: Math.max(0, hero.totalXp + amount) };
     this.hero.set(updated);
     this.writeStoredHero(updated);
-    this.scheduleSync('hero', () => this.hero());
+    this.api.addXp(amount).subscribe({ error: () => {} });
   }
 
-  /** Apaga o herói (estado e localStorage). Não sincroniza com o backend. */
+  /** Apaga o herói (estado e localStorage) e sincroniza com o backend. */
   resetHero(): void {
     this.hero.set(null);
     this.removeStoredHero();
+    this.api.deleteHero().subscribe({ error: () => {} });
   }
 
   /** Atualiza apenas o nome do herói, preservando classe e XP. */
@@ -85,7 +85,7 @@ export class GameService {
     const updated: Hero = { ...hero, name: name.trim() };
     this.hero.set(updated);
     this.writeStoredHero(updated);
-    this.scheduleSync('hero', () => this.hero());
+    this.api.putHero(updated).subscribe({ error: () => {} });
   }
 
   private readStoredHero(): Hero | null {
@@ -131,15 +131,5 @@ export class GameService {
       typeof candidate['totalXp'] === 'number' &&
       Number.isFinite(candidate['totalXp'])
     );
-  }
-
-  private scheduleSync(name: string, payloadFactory: () => unknown): void {
-    if (this.syncTimer !== null) {
-      clearTimeout(this.syncTimer);
-    }
-    this.syncTimer = setTimeout(() => {
-      this.syncTimer = null;
-      this.api.putCollection(name, payloadFactory()).subscribe({ error: () => {} });
-    }, 500);
   }
 }
