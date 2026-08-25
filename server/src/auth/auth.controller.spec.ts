@@ -8,7 +8,7 @@ import {
   Res,
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
 import session from 'express-session';
 // @ts-expect-error supertest ships no bundled types in this project (no new npm dep)
@@ -28,6 +28,17 @@ vi.mock('google-auth-library', () => ({
     constructor(_clientId: string) {}
   },
 }));
+
+// Mutable config map backing the ConfigService mock. Lets each test toggle
+// ALLOW_DEV_LOGIN (and other values) without rebuilding the module.
+const configMap: Record<string, string | undefined> = {
+  GOOGLE_CLIENT_ID: 'test-client-id',
+  API_PUBLIC_URL: 'https://api.example.com',
+  SESSION_SECRET: 'test',
+  GOOGLE_CLIENT_SECRET: 'test-secret',
+  FRONTEND_ORIGIN: 'https://frontend.example.com',
+  ALLOW_DEV_LOGIN: undefined,
+};
 
 // Test-only controller that seeds the OAuth handshake state (state/nonce/
 // code_verifier/expires) into the session, mirroring what GET /api/auth/google
@@ -92,6 +103,8 @@ describe('AuthController', () => {
       })
       .overrideProvider(UsersRepository)
       .useValue(usersRepoStub)
+      .overrideProvider(ConfigService)
+      .useValue({ get: (key: string) => configMap[key] })
       .compile();
     app = moduleRef.createNestApplication();
     app.setGlobalPrefix('api');
@@ -112,6 +125,10 @@ describe('AuthController', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset dev-login feature flag + NODE_ENV so production/flag tests don't
+    // leak into other suites.
+    configMap.ALLOW_DEV_LOGIN = undefined;
+    process.env.NODE_ENV = 'development';
     // Default: token endpoint returns an id_token; verifyIdToken returns a
     // valid payload (aud + nonce match the seeded session).
     fetchMock.mockResolvedValue({
@@ -254,6 +271,80 @@ describe('AuthController', () => {
 
       expect(res.status).toBe(403);
       expect(usersRepoStub.upsertByGoogleSub).not.toHaveBeenCalled();
+    }, 120000);
+  });
+
+  describe('GET /api/auth/dev-login', () => {
+    it('404 when ALLOW_DEV_LOGIN is unset', async () => {
+      const res = await request(app.getHttpServer()).get('/api/auth/dev-login');
+
+      expect(res.status).toBe(404);
+      expect(usersRepoStub.upsertByGoogleSub).not.toHaveBeenCalled();
+    }, 120000);
+
+    it('404 when ALLOW_DEV_LOGIN is false', async () => {
+      configMap.ALLOW_DEV_LOGIN = 'false';
+      const res = await request(app.getHttpServer()).get('/api/auth/dev-login');
+
+      expect(res.status).toBe(404);
+      expect(usersRepoStub.upsertByGoogleSub).not.toHaveBeenCalled();
+    }, 120000);
+
+    it('404 when NODE_ENV=production even with flag true', async () => {
+      configMap.ALLOW_DEV_LOGIN = 'true';
+      process.env.NODE_ENV = 'production';
+      const res = await request(app.getHttpServer()).get('/api/auth/dev-login');
+
+      expect(res.status).toBe(404);
+      expect(usersRepoStub.upsertByGoogleSub).not.toHaveBeenCalled();
+    }, 120000);
+
+    it('happy path: 302 redirect, session user set, user persisted', async () => {
+      configMap.ALLOW_DEV_LOGIN = 'true';
+      const agent = request.agent(app.getHttpServer());
+
+      const res = await agent.get('/api/auth/dev-login');
+
+      expect(res.status).toBe(302);
+      expect(res.headers.location).toBe('https://frontend.example.com');
+
+      // Session-fixation: regenerate then set user; /api/me should now resolve.
+      const me = await agent.get('/api/me');
+      expect(me.status).toBe(200);
+      expect(me.body).toEqual({
+        sub: 'dev-user-local',
+        email: 'dev-user-local@example.com',
+        name: 'Dev User',
+        picture: '',
+      });
+
+      expect(usersRepoStub.upsertByGoogleSub).toHaveBeenCalledWith(
+        'dev-user-local',
+        'dev-user-local@example.com',
+        'Dev User',
+        '',
+      );
+      expect(usersRepoStub.saveConsent).toHaveBeenCalledTimes(1);
+      expect(usersRepoStub.saveConsent).toHaveBeenCalledWith(
+        'dev-user-local',
+        expect.any(Date),
+      );
+    }, 120000);
+
+    it('determinism: two calls produce identical sub', async () => {
+      configMap.ALLOW_DEV_LOGIN = 'true';
+      const agent = request.agent(app.getHttpServer());
+      await agent.get('/api/auth/dev-login');
+      const sub1 = (await agent.get('/api/me')).body.sub;
+
+      // Fresh session/agent — sub must remain the fixed constant.
+      const agent2 = request.agent(app.getHttpServer());
+      await agent2.get('/api/auth/dev-login');
+      const sub2 = (await agent2.get('/api/me')).body.sub;
+
+      expect(sub1).toBe('dev-user-local');
+      expect(sub2).toBe('dev-user-local');
+      expect(sub1).toBe(sub2);
     }, 120000);
   });
 });

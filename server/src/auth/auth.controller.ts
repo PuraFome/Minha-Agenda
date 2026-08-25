@@ -4,6 +4,7 @@ import {
   Get,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
   Post,
   Req,
   Res,
@@ -195,6 +196,45 @@ export class AuthController {
       }
       req.session.user = { sub, email, name, picture };
       // (6) Redirect back to the frontend.
+      res.redirect(frontendOrigin);
+    });
+  }
+
+  // DEV-ONLY mock login for automated QA; disabled unless ALLOW_DEV_LOGIN=true
+  // and NODE_ENV!==production; never enable in production.
+  @Get('dev-login')
+  async devLogin(@Req() req: Request, @Res() res: Response): Promise<void> {
+    const allowed =
+      this.config.get<string>('ALLOW_DEV_LOGIN') === 'true' &&
+      process.env.NODE_ENV !== 'production';
+    if (!allowed) {
+      throw new NotFoundException();
+    }
+
+    const frontendOrigin = this.config.get<string>('FRONTEND_ORIGIN');
+    if (!frontendOrigin) {
+      this.logger.error(
+        'FRONTEND_ORIGIN is not configured; cannot redirect after dev login',
+      );
+      throw new InternalServerErrorException('FRONTEND_ORIGIN is not configured');
+    }
+
+    // Fixed deterministic dev profile — never accept arbitrary sub/email.
+    const sub = 'dev-user-local';
+    const email = 'dev-user-local@example.com';
+    const name = 'Dev User';
+    const picture = '';
+
+    await this.users.upsertByGoogleSub(sub, email, name, picture);
+    await this.users.saveConsent(sub, new Date());
+
+    req.session.regenerate((err) => {
+      if (err) {
+        this.logger.error(`session regeneration failed: ${err.message}`);
+        res.status(500).send();
+        return;
+      }
+      req.session.user = { sub, email, name, picture };
       res.redirect(frontendOrigin);
     });
   }
