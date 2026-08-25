@@ -1,0 +1,56 @@
+<main class="login">
+  <section class="login__card" aria-labelledby="login-title">
+    <h1 id="login-title" class="login__title">Entrar na Minha Agenda</h1>
+    <p class="login__subtitle">
+      Acesse sua conta para organizar suas missões e acompanhar seu progresso.
+    </p>
+
+    <div class="login__notice" role="note" aria-label="Aviso de privacidade LGPD">
+      <h2 class="login__notice-title">Aviso de privacidade (LGPD)</h2>
+      <p class="login__notice-text">
+        Ao entrar, você autoriza o <strong>Minha Agenda</strong> (controlador de
+        dados: Minha Agenda) a processar suas informações de perfil fornecidas
+        pelo Google — nome, e-mail e imagem — com a finalidade exclusiva de
+        identificação e personalização da sua experiência dentro do aplicativo.
+      </p>
+      <p class="login__notice-text">
+        Seus dados são armazenados em um banco de dados
+        <strong>CockroachDB hospedado nos Estados Unidos</strong>. Isso
+        caracteriza uma <strong>transferência internacional de dados</strong>,
+        conforme o Art. 33 da Lei Geral de Proteção de Dados (LGPD).
+      </p>
+      <p class="login__notice-text">
+        Os dados são mantidos enquanto sua conta estiver ativa e por até
+        <strong>30 dias</strong> após uma eventual exclusão, para fins de
+        recuperação e cumprimento de obrigações legais.
+      </p>
+      <p class="login__notice-text">
+        Você pode, a qualquer momento, exercer seus direitos de
+        <strong>acesso, correção e exclusão</strong> dos seus dados, bem como
+        revogar este consentimento, entrando em contato com o controlador.
+      </p>
+    </div>
+
+    <label class="login__consent">
+      <input
+        type="checkbox"
+        class="login__consent-checkbox"
+        [checked]="consent()"
+        (change)="onConsentChange($event)"
+      />
+      <span class="login__consent-label">
+        Li e aceito o aviso de privacidade acima e autorizo o tratamento dos
+        meus dados conforme a LGPD.
+      </span>
+    </label>
+
+    <button
+      type="button"
+      class="login__submit"
+      [disabled]="!consent()"
+      (click)="login()"
+    >
+      Entrar com Google
+    </button>
+  </section>
+</main>

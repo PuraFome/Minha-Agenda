@@ -1,4 +1,25 @@
 <main class="perfil">
+  @if (user(); as u) {
+    <section class="perfil__identity" aria-labelledby="identity-title">
+      <div class="perfil__avatar">
+        @if (u.picture && !imgFailed()) {
+          <img
+            class="perfil__avatar-img"
+            [src]="u.picture"
+            [alt]="u.name || 'Foto do perfil'"
+            (error)="imgFailed.set(true)"
+          />
+        } @else {
+          <span class="perfil__avatar-fallback">{{ userInitials() }}</span>
+        }
+      </div>
+      <div class="perfil__identity-info">
+        <h1 id="identity-title" class="perfil__identity-name">{{ u.name || 'Usuário' }}</h1>
+        <p class="perfil__identity-email">{{ u.email }}</p>
+      </div>
+    </section>
+  }
+
   @if (hero() === null) {
     <app-hero-setup (created)="onHeroCreated()" />
   } @else {
@@ -41,6 +62,13 @@
             <option [value]="option.days">{{ option.label }}</option>
           }
         </select>
+      </section>
+
+      <section class="perfil__danger" aria-labelledby="danger-title">
+        <h2 id="danger-title" class="perfil__danger-title">Zona de perigo</h2>
+        <button type="button" class="perfil__delete-btn" (click)="deleteAccount()">
+          Excluir conta
+        </button>
       </section>
     </div>
   }

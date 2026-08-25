@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
+import { ApiService } from '../core/api.service';
 import { GameService } from './game.service';
 import { SettingsService } from './settings.service';
 import { DIFFICULTIES, Difficulty, Mission, XP_TABLE } from './game.types';
@@ -30,9 +31,26 @@ export class MissionService {
   private readonly document = inject(DOCUMENT);
   private readonly gameService = inject(GameService);
   private readonly settingsService = inject(SettingsService);
+  private readonly api = inject(ApiService);
+  private syncTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** Todas as missões, na ordem de criação. */
   readonly tasks = signal<Mission[]>(this.readStoredMissions());
+
+  constructor() {
+    // Backend wins over localStorage when present; 401/network → keep local value.
+    this.api.getCollection('missions').subscribe({
+      next: (payload) => {
+        if (Array.isArray(payload)) {
+          this.tasks.set(payload as Mission[]);
+          this.writeStoredMissions(payload as Mission[]);
+        }
+      },
+      error: () => {
+        // Mantém o valor do localStorage; silencioso.
+      },
+    });
+  }
 
   /** Missões pendentes, ordenadas por dueDate asc (nulls por último), com flag de atraso. */
   readonly pendingTasks = computed<PendingMissionRow[]>(() => {
@@ -126,6 +144,7 @@ export class MissionService {
     if (purged.length !== current.length) {
       this.tasks.set(purged);
       this.writeStoredMissions(purged);
+      this.scheduleSync('missions', () => this.tasks());
     }
   }
 
@@ -244,6 +263,7 @@ export class MissionService {
   private persist(): void {
     this.purgeExpired();
     this.writeStoredMissions(this.tasks());
+    this.scheduleSync('missions', () => this.tasks());
   }
 
   private writeStoredMissions(missions: Mission[]): void {
@@ -255,5 +275,15 @@ export class MissionService {
     } catch {
       // Falha silenciosa: o estado continua funcionando em memória.
     }
+  }
+
+  private scheduleSync(name: string, payloadFactory: () => unknown): void {
+    if (this.syncTimer !== null) {
+      clearTimeout(this.syncTimer);
+    }
+    this.syncTimer = setTimeout(() => {
+      this.syncTimer = null;
+      this.api.putCollection(name, payloadFactory()).subscribe({ error: () => {} });
+    }, 500);
   }
 }

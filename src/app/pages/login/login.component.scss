@@ -1,0 +1,105 @@
+.login {
+  display: grid;
+  place-items: center;
+  min-height: calc(100vh - 12rem);
+  padding: var(--space-7) var(--space-5);
+}
+
+.login__card {
+  width: 100%;
+  max-width: 34rem;
+  display: grid;
+  gap: var(--space-5);
+  padding: var(--space-6);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+
+.login__title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  color: var(--color-text);
+}
+
+.login__subtitle {
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  margin-top: calc(var(--space-2) * -1);
+}
+
+.login__notice {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.login__notice-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-primary);
+}
+
+.login__notice-text {
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--color-text-muted);
+
+  strong {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+}
+
+.login__consent {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  cursor: pointer;
+}
+
+.login__consent-checkbox {
+  flex: none;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.15rem;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.login__consent-label {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+.login__submit {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-primary-contrast);
+  background: var(--color-primary);
+  border: none;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition:
+    var(--transition-colors),
+    transform var(--transition-fast);
+
+  &:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}

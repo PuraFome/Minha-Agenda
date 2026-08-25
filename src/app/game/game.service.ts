@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
+import { ApiService } from '../core/api.service';
 import { Hero, HeroClass } from './game.types';
 
 const HERO_STORAGE_KEY = 'ma.hero.v1';
@@ -13,9 +14,26 @@ const HERO_STORAGE_KEY = 'ma.hero.v1';
 @Injectable({ providedIn: 'root' })
 export class GameService {
   private readonly document = inject(DOCUMENT);
+  private readonly api = inject(ApiService);
+  private syncTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** Herói atual — null enquanto o usuário não criou um (fluxo de primeiro acesso). */
   readonly hero = signal<Hero | null>(this.readStoredHero());
+
+  constructor() {
+    // Backend wins over localStorage when present; 401/network → keep local value.
+    this.api.getCollection('hero').subscribe({
+      next: (payload) => {
+        if (this.isValidHero(payload)) {
+          this.hero.set(payload);
+          this.writeStoredHero(payload);
+        }
+      },
+      error: () => {
+        // Mantém o valor do localStorage; silencioso.
+      },
+    });
+  }
 
   /** Nível do herói: floor(totalXp / 100) + 1. */
   readonly level = computed(() => {
@@ -37,6 +55,7 @@ export class GameService {
     const hero: Hero = { name, heroClass, totalXp: 0 };
     this.hero.set(hero);
     this.writeStoredHero(hero);
+    this.scheduleSync('hero', () => this.hero());
   }
 
   /** Adiciona (ou subtrai, com amount negativo) XP do herói. Nunca fica abaixo de 0. */
@@ -48,9 +67,10 @@ export class GameService {
     const updated: Hero = { ...hero, totalXp: Math.max(0, hero.totalXp + amount) };
     this.hero.set(updated);
     this.writeStoredHero(updated);
+    this.scheduleSync('hero', () => this.hero());
   }
 
-  /** Apaga o herói (estado e localStorage). */
+  /** Apaga o herói (estado e localStorage). Não sincroniza com o backend. */
   resetHero(): void {
     this.hero.set(null);
     this.removeStoredHero();
@@ -65,6 +85,7 @@ export class GameService {
     const updated: Hero = { ...hero, name: name.trim() };
     this.hero.set(updated);
     this.writeStoredHero(updated);
+    this.scheduleSync('hero', () => this.hero());
   }
 
   private readStoredHero(): Hero | null {
@@ -97,5 +118,28 @@ export class GameService {
     } catch {
       // Falha silenciosa.
     }
+  }
+
+  private isValidHero(value: unknown): value is Hero {
+    if (typeof value !== 'object' || value === null) {
+      return false;
+    }
+    const candidate = value as Record<string, unknown>;
+    return (
+      typeof candidate['name'] === 'string' &&
+      typeof candidate['heroClass'] === 'string' &&
+      typeof candidate['totalXp'] === 'number' &&
+      Number.isFinite(candidate['totalXp'])
+    );
+  }
+
+  private scheduleSync(name: string, payloadFactory: () => unknown): void {
+    if (this.syncTimer !== null) {
+      clearTimeout(this.syncTimer);
+    }
+    this.syncTimer = setTimeout(() => {
+      this.syncTimer = null;
+      this.api.putCollection(name, payloadFactory()).subscribe({ error: () => {} });
+    }, 500);
   }
 }

@@ -145,3 +145,7 @@ docker-compose.override.yml
 .omo/
 .ia-jail
 AGENTS.md
+server/.env
+*.env
+*.omo/
+.husky

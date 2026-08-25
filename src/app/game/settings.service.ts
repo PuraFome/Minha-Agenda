@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
+import { ApiService } from '../core/api.service';
 
 const SETTINGS_STORAGE_KEY = 'ma.settings.v1';
 
@@ -13,15 +14,33 @@ const SETTINGS_STORAGE_KEY = 'ma.settings.v1';
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
   private readonly document = inject(DOCUMENT);
+  private readonly api = inject(ApiService);
+  private syncTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** Dias de retenção de missões concluídas — 0 = manter para sempre. */
   readonly retentionDays = signal<number>(this.readStoredRetentionDays());
+
+  constructor() {
+    // Backend wins over localStorage when present; 401/network → keep local value.
+    this.api.getCollection('settings').subscribe({
+      next: (payload) => {
+        if (this.isValidSettings(payload)) {
+          this.retentionDays.set(Math.max(0, Math.floor(payload.retentionDays)));
+          this.persist();
+        }
+      },
+      error: () => {
+        // Mantém o valor do localStorage; silencioso.
+      },
+    });
+  }
 
   /** Define os dias de retenção, limitando a um inteiro não-negativo. */
   setRetentionDays(days: number): void {
     const clamped = Math.max(0, Math.floor(days));
     this.retentionDays.set(clamped);
     this.persist();
+    this.scheduleSync('settings', () => ({ retentionDays: this.retentionDays() }));
   }
 
   private readStoredRetentionDays(): number {
@@ -49,5 +68,23 @@ export class SettingsService {
     } catch {
       // Falha silenciosa: o estado continua funcionando em memória.
     }
+  }
+
+  private isValidSettings(value: unknown): value is { retentionDays: number } {
+    if (typeof value !== 'object' || value === null) {
+      return false;
+    }
+    const candidate = value as Record<string, unknown>;
+    return typeof candidate['retentionDays'] === 'number' && Number.isFinite(candidate['retentionDays']);
+  }
+
+  private scheduleSync(name: string, payloadFactory: () => unknown): void {
+    if (this.syncTimer !== null) {
+      clearTimeout(this.syncTimer);
+    }
+    this.syncTimer = setTimeout(() => {
+      this.syncTimer = null;
+      this.api.putCollection(name, payloadFactory()).subscribe({ error: () => {} });
+    }, 500);
   }
 }

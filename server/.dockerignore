@@ -1,0 +1,11 @@
+# Files copied into the Docker build context by `COPY . .` are excluded here
+# so secrets and stale local artifacts never land in the image.
+node_modules
+dist
+.env
+.git
+.gitignore
+*.log
+npm-debug.log*
+coverage
+.DS_Store
