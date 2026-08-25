@@ -47,7 +47,7 @@ describe('ApiService', () => {
     expect(http.get).toHaveBeenCalledWith(`${API}/api/hero`, { withCredentials: true });
   });
 
-  it('putHero() PUTs /api/hero with the hero body', () => {
+  it('putHero() PUTs /api/hero with only {name, heroClass}', () => {
     const http = mockHttp();
     http.put.mockReturnValue(of(null));
     const service = createService(http);
@@ -55,9 +55,24 @@ describe('ApiService', () => {
 
     service.putHero(hero).subscribe();
 
-    expect(http.put).toHaveBeenCalledWith(`${API}/api/hero`, hero, {
-      withCredentials: true,
-    });
+    expect(http.put).toHaveBeenCalledWith(
+      `${API}/api/hero`,
+      { name: 'B', heroClass: 'ladino' },
+      { withCredentials: true },
+    );
+  });
+
+  it('putHero() strips totalXp from the body (regression: forbidNonWhitelisted)', () => {
+    const http = mockHttp();
+    http.put.mockReturnValue(of(null));
+    const service = createService(http);
+    const hero: Hero = { name: 'Atlas', heroClass: 'mago', totalXp: 42 };
+
+    service.putHero(hero).subscribe();
+
+    const [, body] = http.put.mock.calls[0];
+    expect(body).toEqual({ name: 'Atlas', heroClass: 'mago' });
+    expect(body).not.toHaveProperty('totalXp');
   });
 
   it('addXp(-5) PATCHes /api/hero/xp with {delta:-5}', () => {
@@ -101,7 +116,7 @@ describe('ApiService', () => {
     });
   });
 
-  it('createMission() POSTs /api/missions', () => {
+  it('createMission() POSTs /api/missions with only whitelisted fields', () => {
     const http = mockHttp();
     const mission: Mission = {
       id: '2',
@@ -114,8 +129,54 @@ describe('ApiService', () => {
 
     service.createMission(mission).subscribe((res) => expect(res).toEqual(mission));
 
-    expect(http.post).toHaveBeenCalledWith(`${API}/api/missions`, mission, {
-      withCredentials: true,
+    expect(http.post).toHaveBeenCalledWith(
+      `${API}/api/missions`,
+      { id: '2', title: 'X', difficulty: 'media' },
+      { withCredentials: true },
+    );
+  });
+
+  it('createMission() strips completed/completedAt and omits undefined dueDate (regression: forbidNonWhitelisted)', () => {
+    const http = mockHttp();
+    const mission: Mission = {
+      id: '3',
+      title: 'Y',
+      difficulty: 'dificil',
+      completed: false,
+      completedAt: null,
+    };
+    http.post.mockReturnValue(of(mission));
+    const service = createService(http);
+
+    service.createMission(mission).subscribe();
+
+    const [, body] = http.post.mock.calls[0];
+    expect(body).toEqual({ id: '3', title: 'Y', difficulty: 'dificil' });
+    expect(body).not.toHaveProperty('completed');
+    expect(body).not.toHaveProperty('completedAt');
+    expect(body).not.toHaveProperty('dueDate');
+  });
+
+  it('createMission() includes dueDate when present (null allowed by DTO)', () => {
+    const http = mockHttp();
+    const mission: Mission = {
+      id: '4',
+      title: 'Z',
+      difficulty: 'facil',
+      dueDate: null,
+      completed: false,
+    };
+    http.post.mockReturnValue(of(mission));
+    const service = createService(http);
+
+    service.createMission(mission).subscribe();
+
+    const [, body] = http.post.mock.calls[0];
+    expect(body).toEqual({
+      id: '4',
+      title: 'Z',
+      difficulty: 'facil',
+      dueDate: null,
     });
   });
 
@@ -161,7 +222,7 @@ describe('ApiService', () => {
 
   it('getSettings() GETs /api/settings', () => {
     const http = mockHttp();
-    const settings: Settings = { retentionDays: 7 };
+    const settings: Settings = { retentionDays: 7, muralActiveTab: 'pending' };
     http.get.mockReturnValue(of(settings));
     const service = createService(http);
 
@@ -174,13 +235,26 @@ describe('ApiService', () => {
 
   it('putSettings() PUTs /api/settings', () => {
     const http = mockHttp();
-    const settings: Settings = { retentionDays: 0 };
+    const settings: Settings = { retentionDays: 0, muralActiveTab: 'completed' };
     http.put.mockReturnValue(of(null));
     const service = createService(http);
 
     service.putSettings(settings).subscribe();
 
     expect(http.put).toHaveBeenCalledWith(`${API}/api/settings`, settings, {
+      withCredentials: true,
+    });
+  });
+
+  it('putSettings() accepts a Partial<Settings> (regression: Task 10 type widening)', () => {
+    const http = mockHttp();
+    http.put.mockReturnValue(of(null));
+    const service = createService(http);
+    const partial: Partial<Settings> = { retentionDays: 14 };
+
+    service.putSettings(partial).subscribe();
+
+    expect(http.put).toHaveBeenCalledWith(`${API}/api/settings`, partial, {
       withCredentials: true,
     });
   });

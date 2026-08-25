@@ -3,10 +3,11 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, catchError, throwError } from 'rxjs';
 
 import { environment } from '../../environments/environment';
-import { Hero, Mission } from '../game/game.types';
+import { Difficulty, Hero, Mission } from '../game/game.types';
 
 export interface Settings {
   retentionDays: number;
+  muralActiveTab: 'pending' | 'completed';
 }
 
 export class AuthRequiredError extends Error {
@@ -31,8 +32,9 @@ export class ApiService {
 
   putHero(hero: Hero): Observable<void> {
     const url = `${environment.apiUrl}/api/hero`;
+    const body = { name: hero.name, heroClass: hero.heroClass };
     return this.http
-      .put<void>(url, hero, { withCredentials: true })
+      .put<void>(url, body, { withCredentials: true })
       .pipe(catchError((err) => this.handleError(err)));
   }
 
@@ -61,8 +63,23 @@ export class ApiService {
 
   createMission(mission: Mission): Observable<Mission> {
     const url = `${environment.apiUrl}/api/missions`;
+    const body: {
+      id?: string;
+      title: string;
+      difficulty: Difficulty;
+      dueDate?: string | null;
+    } = {
+      title: mission.title,
+      difficulty: mission.difficulty,
+    };
+    if (mission.id) {
+      body.id = mission.id;
+    }
+    if (mission.dueDate !== undefined) {
+      body.dueDate = mission.dueDate;
+    }
     return this.http
-      .post<Mission>(url, mission, { withCredentials: true })
+      .post<Mission>(url, body, { withCredentials: true })
       .pipe(catchError((err) => this.handleError(err)));
   }
 
@@ -96,7 +113,7 @@ export class ApiService {
       .pipe(catchError((err) => this.handleError(err)));
   }
 
-  putSettings(settings: Settings): Observable<void> {
+  putSettings(settings: Partial<Settings>): Observable<void> {
     const url = `${environment.apiUrl}/api/settings`;
     return this.http
       .put<void>(url, settings, { withCredentials: true })
