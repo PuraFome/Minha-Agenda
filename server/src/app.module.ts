@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { DataModule } from './data/data.module';
 import { SettingsModule } from './settings/settings.module';
 import { HeroModule } from './hero/hero.module';
+import { MissionsModule } from './missions/missions.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { HeroModule } from './hero/hero.module';
     DataModule,
     SettingsModule,
     HeroModule,
+    MissionsModule,
   ],
   controllers: [AppController],
   providers: [

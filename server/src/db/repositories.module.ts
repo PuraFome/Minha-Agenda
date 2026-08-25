@@ -4,6 +4,7 @@ import { UsersRepository } from './users.repository';
 import { UserDataRepository } from './user-data.repository';
 import { UserSettingsRepository } from './user-settings.repository';
 import { HeroesRepository } from './heroes.repository';
+import { MissionsRepository } from './missions.repository';
 
 @Module({
   imports: [DatabaseModule],
@@ -12,12 +13,14 @@ import { HeroesRepository } from './heroes.repository';
     UserDataRepository,
     UserSettingsRepository,
     HeroesRepository,
+    MissionsRepository,
   ],
   exports: [
     UsersRepository,
     UserDataRepository,
     UserSettingsRepository,
     HeroesRepository,
+    MissionsRepository,
   ],
 })
 export class RepositoriesModule {}
