@@ -28,7 +28,10 @@ export class UserSettingsRepository {
    * Read the settings row for a user, or `null` when none exists.
    */
   async getSettings(userId: string): Promise<UserSettings | null> {
-    const result: QueryResult<{ retention_days: number; mural_active_tab: string }> =
+    // `retention_days` is INT in the schema; CockroachDB returns INT8 via node-pg
+    // as a JS string, so the runtime type is `number | string`. Coerce to a
+    // number to satisfy the documented `retentionDays: number` contract.
+    const result: QueryResult<{ retention_days: number | string; mural_active_tab: string }> =
       await this.pool.query(
         `SELECT retention_days, mural_active_tab FROM user_settings WHERE user_id = $1`,
         [userId],
@@ -36,7 +39,7 @@ export class UserSettingsRepository {
     const row = result.rows[0];
     if (!row) return null;
     return {
-      retentionDays: row.retention_days,
+      retentionDays: Number(row.retention_days),
       muralActiveTab: row.mural_active_tab as MuralActiveTab,
     };
   }

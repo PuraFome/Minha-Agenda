@@ -29,7 +29,10 @@ export class HeroesRepository {
    * Read the hero row for a user, or `null` when none exists.
    */
   async getHero(userId: string): Promise<Hero | null> {
-    const result: QueryResult<{ name: string; hero_class: string; total_xp: number }> =
+    // `total_xp` is INT in the schema; CockroachDB returns INT8 via node-pg as a
+    // JS string, so the runtime type is `number | string`. Coerce to a finite
+    // integer to satisfy the documented `totalXp: number` contract.
+    const result: QueryResult<{ name: string; hero_class: string; total_xp: number | string }> =
       await this.pool.query(
         `SELECT name, hero_class, total_xp FROM heroes WHERE user_id = $1`,
         [userId],
@@ -39,7 +42,7 @@ export class HeroesRepository {
     return {
       name: row.name,
       heroClass: row.hero_class as HeroClass,
-      totalXp: row.total_xp,
+      totalXp: Number(row.total_xp),
     };
   }
 

@@ -85,6 +85,85 @@ describe('MissionsRepository', () => {
     expect(sql).not.toContain('m1');
   });
 
+  it('listMissions: normalizes DATE/TIMESTAMPTZ driver Date objects to string contract', async () => {
+    // CockroachDB returns DATE as a JS Date (midnight UTC) and TIMESTAMPTZ as a
+    // JS Date. The mapping layer must emit 'YYYY-MM-DD' for dueDate and an ISO
+    // string for completedAt.
+    const due = new Date('2026-08-25T00:00:00.000Z');
+    const completed = new Date('2026-08-25T18:39:37.191Z');
+    hoisted.mockPoolQuery.mockResolvedValue({
+      rows: [
+        {
+          id: 'm1',
+          user_id: 'u1',
+          title: 'T',
+          difficulty: 'facil',
+          due_date: due,
+          completed: true,
+          completed_at: completed,
+        },
+      ],
+    });
+    const repo = makeRepo();
+    const missions = await repo.listMissions('u1');
+
+    expect(missions).toEqual([
+      {
+        id: 'm1',
+        title: 'T',
+        difficulty: 'facil',
+        dueDate: '2026-08-25',
+        completed: true,
+        completedAt: '2026-08-25T18:39:37.191Z',
+      },
+    ]);
+    expect(typeof missions[0].dueDate).toBe('string');
+    expect(typeof missions[0].completedAt).toBe('string');
+  });
+
+  it('listMissions: keeps null dueDate/completedAt as null', async () => {
+    hoisted.mockPoolQuery.mockResolvedValue({
+      rows: [
+        {
+          id: 'm1',
+          user_id: 'u1',
+          title: 'T',
+          difficulty: 'facil',
+          due_date: null,
+          completed: false,
+          completed_at: null,
+        },
+      ],
+    });
+    const repo = makeRepo();
+    const missions = await repo.listMissions('u1');
+
+    expect(missions[0].dueDate).toBeNull();
+    expect(missions[0].completedAt).toBeNull();
+  });
+
+  it('listMissions: accepts already-string date values (no double conversion)', async () => {
+    // A cast in SQL can yield a string; the mapper must still normalize it.
+    hoisted.mockPoolQuery.mockResolvedValue({
+      rows: [
+        {
+          id: 'm1',
+          user_id: 'u1',
+          title: 'T',
+          difficulty: 'facil',
+          due_date: '2026-08-25',
+          completed: true,
+          completed_at: '2026-08-25T18:39:37.191Z',
+        },
+      ],
+    });
+    const repo = makeRepo();
+    const missions = await repo.listMissions('u1');
+
+    expect(missions[0].dueDate).toBe('2026-08-25');
+    expect(missions[0].completedAt).toBe('2026-08-25T18:39:37.191Z');
+  });
+
   it('createMission: runs inside runTxn, fully parameterized, injection-safe title', async () => {
     const repo = makeRepo();
     const mission = makeMission({ title: EVIL_TITLE });

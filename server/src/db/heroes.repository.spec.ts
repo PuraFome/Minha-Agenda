@@ -64,6 +64,26 @@ describe('HeroesRepository', () => {
     expect(sql).not.toContain('u1');
   });
 
+  it('getHero: coerces INT8 total_xp (string from driver) to a strict number', async () => {
+    // CockroachDB returns INT8 via node-pg as a JS string; the mapping layer
+    // must coerce it so the frontend `typeof totalXp === 'number'` check passes.
+    hoisted.mockPoolQuery.mockResolvedValue({
+      rows: [{ name: 'Atlas', hero_class: 'mago', total_xp: '20' }],
+    });
+    const repo = makeRepo();
+    const hero = await repo.getHero('u1');
+
+    expect(hero).toEqual({ name: 'Atlas', heroClass: 'mago', totalXp: 20 });
+    expect(typeof hero!.totalXp).toBe('number');
+    expect(hero!.totalXp).toBe(20);
+  });
+
+  it('getHero: returns null when no row exists', async () => {
+    hoisted.mockPoolQuery.mockResolvedValue({ rows: [] });
+    const repo = makeRepo();
+    expect(await repo.getHero('u1')).toBeNull();
+  });
+
   it('upsertHero: runs inside runTxn, fully parameterized, injection-safe name', async () => {
     const repo = makeRepo();
     await repo.upsertHero('u1', EVIL_NAME, 'mago', 0);

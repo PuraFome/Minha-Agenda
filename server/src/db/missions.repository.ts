@@ -20,15 +20,22 @@ export interface Mission {
   completedAt?: string | null;
 }
 
-/** Raw DB row (snake_case) before mapping to the camelCase `Mission`. */
+/**
+ * Raw DB row (snake_case) before mapping to the camelCase `Mission`.
+ *
+ * Honest runtime types: CockroachDB returns `DATE`/`TIMESTAMPTZ` columns as JS
+ * `Date` objects via node-pg (and a value may already be a string from a cast),
+ * so the date columns are typed `string | Date | null`. The mapping layer
+ * normalizes them to the documented string contract.
+ */
 interface MissionRow {
   id: string;
   user_id: string;
   title: string;
   difficulty: Difficulty;
-  due_date: string | null;
+  due_date: string | Date | null;
   completed: boolean;
-  completed_at: string | null;
+  completed_at: string | Date | null;
 }
 
 /** Fields a caller may patch on a mission (identifiers are literals below). */
@@ -51,15 +58,24 @@ export class MissionsRepository {
 
   /**
    * Map a raw DB row to the camelCase `Mission` shape.
+   *
+   * `due_date`/`completed_at` arrive as JS `Date` objects (or strings) from the
+   * driver; normalize them to the documented string contract:
+   * - `dueDate`: `null` when null, else `'YYYY-MM-DD'`.
+   * - `completedAt`: `null` when null, else an ISO string.
    */
   private toMission(row: MissionRow): Mission {
+    const dueDate =
+      row.due_date == null ? null : new Date(row.due_date).toISOString().slice(0, 10);
+    const completedAt =
+      row.completed_at == null ? null : new Date(row.completed_at).toISOString();
     return {
       id: row.id,
       title: row.title,
       difficulty: row.difficulty,
-      dueDate: row.due_date,
+      dueDate,
       completed: row.completed,
-      completedAt: row.completed_at,
+      completedAt,
     };
   }
 

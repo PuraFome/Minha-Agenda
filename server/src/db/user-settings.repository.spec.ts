@@ -64,6 +64,26 @@ describe('UserSettingsRepository', () => {
     expect(sql).not.toContain('u1');
   });
 
+  it('getSettings: coerces INT8 retention_days (string from driver) to a strict number', async () => {
+    // CockroachDB returns INT8 via node-pg as a JS string; the mapping layer
+    // must coerce it to a number for the documented `retentionDays: number`.
+    hoisted.mockPoolQuery.mockResolvedValue({
+      rows: [{ retention_days: '30', mural_active_tab: 'pending' }],
+    });
+    const repo = makeRepo();
+    const settings = await repo.getSettings('u1');
+
+    expect(settings).toEqual({ retentionDays: 30, muralActiveTab: 'pending' });
+    expect(typeof settings!.retentionDays).toBe('number');
+    expect(settings!.retentionDays).toBe(30);
+  });
+
+  it('getSettings: returns null when no row exists', async () => {
+    hoisted.mockPoolQuery.mockResolvedValue({ rows: [] });
+    const repo = makeRepo();
+    expect(await repo.getSettings('u1')).toBeNull();
+  });
+
   it('upsertSettings: runs inside runTxn, fully parameterized, injection-safe user_id', async () => {
     const repo = makeRepo();
     await repo.upsertSettings(EVIL_USER, 7, 'pending');
