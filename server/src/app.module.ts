@@ -7,6 +7,7 @@ import { AppService } from './app.service';
 import { DatabaseModule } from './db/database.module';
 import { AuthModule } from './auth/auth.module';
 import { DataModule } from './data/data.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { DataModule } from './data/data.module';
     DatabaseModule,
     AuthModule,
     DataModule,
+    SettingsModule,
   ],
   controllers: [AppController],
   providers: [
