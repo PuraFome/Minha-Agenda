@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { RepositoriesModule } from '../db/repositories.module';
-import { DataController } from './data.controller';
+import { HeroController } from './hero.controller';
 
 @Module({
   imports: [RepositoriesModule],
-  controllers: [DataController],
+  controllers: [HeroController],
 })
-export class DataModule {}
+export class HeroModule {}

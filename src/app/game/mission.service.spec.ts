@@ -1,21 +1,76 @@
-import { TestBed } from '@angular/core/testing';
+import '@angular/compiler';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { Injector, runInInjectionContext } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
-import { vi } from 'vitest';
+import { HttpClient } from '@angular/common/http';
+import { of, throwError } from 'rxjs';
+
 import { MissionService } from './mission.service';
 import { GameService } from './game.service';
 import { SettingsService } from './settings.service';
+import { ApiService } from '../core/api.service';
 import { Difficulty, Mission, XP_TABLE } from './game.types';
+
+interface MockApi {
+  getHero: ReturnType<typeof vi.fn>;
+  putHero: ReturnType<typeof vi.fn>;
+  addXp: ReturnType<typeof vi.fn>;
+  deleteHero: ReturnType<typeof vi.fn>;
+  getSettings: ReturnType<typeof vi.fn>;
+  putSettings: ReturnType<typeof vi.fn>;
+  listMissions: ReturnType<typeof vi.fn>;
+  createMission: ReturnType<typeof vi.fn>;
+  updateMission: ReturnType<typeof vi.fn>;
+  setMissionComplete: ReturnType<typeof vi.fn>;
+  deleteMission: ReturnType<typeof vi.fn>;
+}
 
 describe('MissionService', () => {
   let service: MissionService;
   let gameService: GameService;
   let settingsService: SettingsService;
+  let mockApi: MockApi;
   let mockLocalStorage: Record<string, string>;
   let mockDocument: Document;
 
+  function createMockApi(): MockApi {
+    return {
+      getHero: vi.fn(() => of(null)),
+      putHero: vi.fn(() => of(undefined)),
+      addXp: vi.fn(() => of(undefined)),
+      deleteHero: vi.fn(() => of(undefined)),
+      getSettings: vi.fn(() => of({})),
+      putSettings: vi.fn(() => of(undefined)),
+      // Sem backend por padrão: erro mantém o cache do localStorage.
+      listMissions: vi.fn(() => throwError(() => new Error('no backend'))),
+      createMission: vi.fn(() => of({} as Mission)),
+      updateMission: vi.fn(() => of(undefined)),
+      setMissionComplete: vi.fn(() => of(undefined)),
+      deleteMission: vi.fn(() => of(undefined)),
+    };
+  }
+
+  function createService(): void {
+    const injector = Injector.create({
+      providers: [
+        MissionService,
+        GameService,
+        SettingsService,
+        { provide: ApiService, useValue: mockApi },
+        { provide: DOCUMENT, useValue: mockDocument },
+        { provide: HttpClient, useValue: ({ request: vi.fn() } as unknown) as HttpClient },
+      ],
+    });
+
+    runInInjectionContext(injector, () => {
+      service = injector.get(MissionService);
+      gameService = injector.get(GameService);
+      settingsService = injector.get(SettingsService);
+    });
+  }
+
   beforeEach(() => {
     mockLocalStorage = {};
-
     mockDocument = {
       defaultView: {
         localStorage: {
@@ -33,18 +88,8 @@ describe('MissionService', () => {
       },
     } as unknown as Document;
 
-    TestBed.configureTestingModule({
-      providers: [
-        GameService,
-        MissionService,
-        SettingsService,
-        { provide: DOCUMENT, useValue: mockDocument },
-      ],
-    });
-
-    service = TestBed.inject(MissionService);
-    gameService = TestBed.inject(GameService);
-    settingsService = TestBed.inject(SettingsService);
+    mockApi = createMockApi();
+    createService();
   });
 
   afterEach(() => {
@@ -54,6 +99,10 @@ describe('MissionService', () => {
   describe('initial state', () => {
     it('should start with an empty mission list', () => {
       expect(service.tasks()).toEqual([]);
+    });
+
+    it('should call api.listMissions on init', () => {
+      expect(mockApi.listMissions).toHaveBeenCalledTimes(1);
     });
 
     it('should hydrate missions from localStorage on init', () => {
@@ -68,39 +117,40 @@ describe('MissionService', () => {
       ];
       mockLocalStorage['ma.missions.v1'] = JSON.stringify(missions);
 
-      TestBed.resetTestingModule();
-      TestBed.configureTestingModule({
-        providers: [
-          GameService,
-          MissionService,
-          SettingsService,
-          { provide: DOCUMENT, useValue: mockDocument },
-        ],
-      });
+      createService();
+      expect(service.tasks()).toEqual(missions);
+    });
 
-      const hydrated = TestBed.inject(MissionService);
-      expect(hydrated.tasks()).toEqual(missions);
+    it('should keep local cache when listMissions errors', () => {
+      const missions: Mission[] = [
+        { id: 'm1', title: 'Cached', difficulty: 'facil', completed: false },
+      ];
+      mockLocalStorage['ma.missions.v1'] = JSON.stringify(missions);
+
+      mockApi.listMissions.mockReturnValue(throwError(() => new Error('401')));
+      createService();
+      expect(service.tasks()).toEqual(missions);
+    });
+
+    it('should set signal and cache when listMissions returns missions', () => {
+      const missions: Mission[] = [
+        { id: 'm1', title: 'From API', difficulty: 'facil', completed: false },
+      ];
+      mockApi.listMissions.mockReturnValue(of(missions));
+      createService();
+
+      expect(service.tasks()).toEqual(missions);
+      expect(JSON.parse(mockLocalStorage['ma.missions.v1']!)).toEqual(missions);
     });
 
     it('should handle corrupted localStorage gracefully', () => {
       mockLocalStorage['ma.missions.v1'] = 'not json';
 
-      TestBed.resetTestingModule();
-      TestBed.configureTestingModule({
-        providers: [
-          GameService,
-          MissionService,
-          SettingsService,
-          { provide: DOCUMENT, useValue: mockDocument },
-        ],
-      });
-
-      const hydrated = TestBed.inject(MissionService);
-      expect(hydrated.tasks()).toEqual([]);
+      createService();
+      expect(service.tasks()).toEqual([]);
     });
 
     it('should handle unavailable localStorage gracefully', () => {
-      TestBed.resetTestingModule();
       const brokenDocument = {
         defaultView: {
           localStorage: {
@@ -111,17 +161,20 @@ describe('MissionService', () => {
         },
       } as unknown as Document;
 
-      TestBed.configureTestingModule({
+      const injector = Injector.create({
         providers: [
-          GameService,
           MissionService,
+          GameService,
           SettingsService,
+          { provide: ApiService, useValue: mockApi },
           { provide: DOCUMENT, useValue: brokenDocument },
+          { provide: HttpClient, useValue: ({ request: vi.fn() } as unknown) as HttpClient },
         ],
       });
-
-      const resilient = TestBed.inject(MissionService);
-      expect(resilient.tasks()).toEqual([]);
+      runInInjectionContext(injector, () => {
+        const resilient = injector.get(MissionService);
+        expect(resilient.tasks()).toEqual([]);
+      });
     });
   });
 
@@ -139,18 +192,8 @@ describe('MissionService', () => {
       ];
       mockLocalStorage['ma.tasks.v1'] = JSON.stringify(legacy);
 
-      TestBed.resetTestingModule();
-      TestBed.configureTestingModule({
-        providers: [
-          GameService,
-          MissionService,
-          SettingsService,
-          { provide: DOCUMENT, useValue: mockDocument },
-        ],
-      });
-
-      const hydrated = TestBed.inject(MissionService);
-      expect(hydrated.tasks()).toEqual(legacy);
+      createService();
+      expect(service.tasks()).toEqual(legacy);
       expect(JSON.parse(mockLocalStorage['ma.missions.v1']!)).toEqual(legacy);
       expect(mockLocalStorage['ma.tasks.v1']).toBeUndefined();
     });
@@ -158,18 +201,8 @@ describe('MissionService', () => {
     it('should ignore corrupt legacy data and start empty', () => {
       mockLocalStorage['ma.tasks.v1'] = 'not-json';
 
-      TestBed.resetTestingModule();
-      TestBed.configureTestingModule({
-        providers: [
-          GameService,
-          MissionService,
-          SettingsService,
-          { provide: DOCUMENT, useValue: mockDocument },
-        ],
-      });
-
-      const hydrated = TestBed.inject(MissionService);
-      expect(hydrated.tasks()).toEqual([]);
+      createService();
+      expect(service.tasks()).toEqual([]);
       expect(mockLocalStorage['ma.missions.v1']).toBeUndefined();
     });
 
@@ -181,18 +214,8 @@ describe('MissionService', () => {
         { id: 't1', title: 'Old task', difficulty: 'media', completed: false },
       ]);
 
-      TestBed.resetTestingModule();
-      TestBed.configureTestingModule({
-        providers: [
-          GameService,
-          MissionService,
-          SettingsService,
-          { provide: DOCUMENT, useValue: mockDocument },
-        ],
-      });
-
-      const hydrated = TestBed.inject(MissionService);
-      expect(hydrated.tasks().map((m) => m.id)).toEqual(['m1']);
+      createService();
+      expect(service.tasks().map((m) => m.id)).toEqual(['m1']);
       expect(mockLocalStorage['ma.tasks.v1']).toBeDefined();
     });
 
@@ -205,18 +228,8 @@ describe('MissionService', () => {
         { id: 'bad-completed', title: 'Bad completed', difficulty: 'epica', completed: 'yes' },
       ]);
 
-      TestBed.resetTestingModule();
-      TestBed.configureTestingModule({
-        providers: [
-          GameService,
-          MissionService,
-          SettingsService,
-          { provide: DOCUMENT, useValue: mockDocument },
-        ],
-      });
-
-      const hydrated = TestBed.inject(MissionService);
-      expect(hydrated.tasks().map((m) => m.id)).toEqual(['good']);
+      createService();
+      expect(service.tasks().map((m) => m.id)).toEqual(['good']);
     });
   });
 
@@ -251,6 +264,20 @@ describe('MissionService', () => {
       expect(stored).toHaveLength(1);
       expect(stored[0].title).toBe('Persisted mission');
       expect(stored[0].difficulty).toBe('dificil');
+    });
+
+    it('should call api.createMission with the new mission', () => {
+      service.addMission('Write report', 'media', '2026-08-25');
+
+      expect(mockApi.createMission).toHaveBeenCalledTimes(1);
+      expect(mockApi.createMission).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Write report',
+          difficulty: 'media',
+          dueDate: '2026-08-25',
+          completed: false,
+        }),
+      );
     });
   });
 
@@ -293,9 +320,24 @@ describe('MissionService', () => {
       expect(stored[0].completedAt).toBeTruthy();
     });
 
+    it('should call api.setMissionComplete(true) and gameService.addXp', () => {
+      service.addMission('Mission', 'dificil');
+      const id = service.tasks()[0].id;
+      const addXpSpy = vi.spyOn(gameService, 'addXp');
+
+      service.completeMission(id);
+
+      expect(mockApi.setMissionComplete).toHaveBeenCalledWith(id, true);
+      expect(addXpSpy).toHaveBeenCalledWith(XP_TABLE['dificil']);
+    });
+
     it('should be a no-op for an unknown id', () => {
+      const addXpSpy = vi.spyOn(gameService, 'addXp');
+
       expect(() => service.completeMission('missing-id')).not.toThrow();
       expect(gameService.hero()!.totalXp).toBe(0);
+      expect(addXpSpy).not.toHaveBeenCalled();
+      expect(mockApi.setMissionComplete).not.toHaveBeenCalled();
     });
   });
 
@@ -338,6 +380,18 @@ describe('MissionService', () => {
       expect(stored[0].completed).toBe(false);
       expect(stored[0].completedAt).toBeNull();
     });
+
+    it('should call api.setMissionComplete(false) and gameService.addXp(-xp)', () => {
+      service.addMission('Mission', 'epica');
+      const id = service.tasks()[0].id;
+      service.completeMission(id);
+      const addXpSpy = vi.spyOn(gameService, 'addXp');
+
+      service.undoCompleteMission(id);
+
+      expect(mockApi.setMissionComplete).toHaveBeenCalledWith(id, false);
+      expect(addXpSpy).toHaveBeenCalledWith(-XP_TABLE['epica']);
+    });
   });
 
   describe('deleteMission', () => {
@@ -375,6 +429,15 @@ describe('MissionService', () => {
       const stored = JSON.parse(mockLocalStorage['ma.missions.v1']!);
       expect(stored).toEqual([]);
     });
+
+    it('should call api.deleteMission with the id', () => {
+      service.addMission('To delete', 'facil');
+      const id = service.tasks()[0].id;
+
+      service.deleteMission(id);
+
+      expect(mockApi.deleteMission).toHaveBeenCalledWith(id);
+    });
   });
 
   describe('editMission', () => {
@@ -390,6 +453,19 @@ describe('MissionService', () => {
       expect(mission.dueDate).toBe('2026-08-30');
     });
 
+    it('should call api.updateMission with the id and patch', () => {
+      service.addMission('Original', 'facil', '2026-08-20');
+      const id = service.tasks()[0].id;
+
+      service.editMission(id, { title: 'Edited', difficulty: 'epica', dueDate: '2026-08-30' });
+
+      expect(mockApi.updateMission).toHaveBeenCalledWith(id, {
+        title: 'Edited',
+        difficulty: 'epica',
+        dueDate: '2026-08-30',
+      });
+    });
+
     it('should reject edits on a completed mission', () => {
       service.addMission('Done mission', 'facil');
       const id = service.tasks()[0].id;
@@ -398,10 +474,12 @@ describe('MissionService', () => {
       service.editMission(id, { title: 'Hacked' });
 
       expect(service.tasks()[0].title).toBe('Done mission');
+      expect(mockApi.updateMission).not.toHaveBeenCalled();
     });
 
     it('should be a no-op for an unknown id', () => {
       expect(() => service.editMission('missing-id', { title: 'X' })).not.toThrow();
+      expect(mockApi.updateMission).not.toHaveBeenCalled();
     });
   });
 
@@ -504,7 +582,7 @@ describe('MissionService', () => {
       expect(service.tasks()).toHaveLength(1);
     });
 
-    it('should purge without touching hero XP', () => {
+    it('should purge without touching hero XP or calling the API', () => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date('2026-08-18T10:00:00'));
       service.addMission('Old done', 'dificil');
@@ -518,6 +596,7 @@ describe('MissionService', () => {
       expect(service.tasks()).toEqual([]);
       expect(gameService.hero()!.totalXp).toBe(35);
       expect(addXpSpy).not.toHaveBeenCalled();
+      expect(mockApi.deleteMission).not.toHaveBeenCalled();
     });
 
     it('should never purge completed missions without completedAt', () => {
@@ -531,21 +610,11 @@ describe('MissionService', () => {
         },
       ]);
 
-      TestBed.resetTestingModule();
-      TestBed.configureTestingModule({
-        providers: [
-          GameService,
-          MissionService,
-          SettingsService,
-          { provide: DOCUMENT, useValue: mockDocument },
-        ],
-      });
+      createService();
+      settingsService.setRetentionDays(7);
+      service.purgeExpired();
 
-      const hydrated = TestBed.inject(MissionService);
-      TestBed.inject(SettingsService).setRetentionDays(7);
-      hydrated.purgeExpired();
-
-      expect(hydrated.tasks()).toHaveLength(1);
+      expect(service.tasks()).toHaveLength(1);
     });
 
     it('should not purge anything when retention is 0', () => {
@@ -582,18 +651,8 @@ describe('MissionService', () => {
         },
       ]);
 
-      TestBed.resetTestingModule();
-      TestBed.configureTestingModule({
-        providers: [
-          GameService,
-          MissionService,
-          SettingsService,
-          { provide: DOCUMENT, useValue: mockDocument },
-        ],
-      });
-
-      const hydrated = TestBed.inject(MissionService);
-      expect(hydrated.tasks().map((m) => m.id)).toEqual(['recent']);
+      createService();
+      expect(service.tasks().map((m) => m.id)).toEqual(['recent']);
     });
 
     it('should purge expired missions inside persist after a mutation', () => {

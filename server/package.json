@@ -6,6 +6,7 @@
     "build": "nest build",
     "start": "node dist/main.js",
     "migrate": "ts-node src/db/migrate.ts",
+    "migrate:data": "ts-node --project tsconfig.scripts.json scripts/backfill-relations.ts",
     "secret-scan": "sh scripts/secret-scan.sh",
     "test": "vitest run"
   },

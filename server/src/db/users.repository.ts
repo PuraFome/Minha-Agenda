@@ -3,21 +3,6 @@ import type { Pool } from 'pg';
 import type { QueryResult } from 'pg';
 import { PgService } from './pg.service';
 
-/**
- * Allowed `user_data.collection` values. This is the security boundary: any
- * collection name MUST be a member of this set before it is passed (as a `$`
- * parameter) into SQL. Never interpolate an unvalidated collection into a query.
- */
-export const ALLOWED_COLLECTIONS = [
-  'hero',
-  'missions',
-  'settings',
-  'perfil',
-  'mural',
-] as const;
-
-export type Collection = (typeof ALLOWED_COLLECTIONS)[number];
-
 @Injectable()
 export class UsersRepository {
   constructor(private readonly pg: PgService) {}

@@ -1,138 +1,78 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
-import { vi } from 'vitest';
+import '@angular/compiler';
+import { Injector, runInInjectionContext } from '@angular/core';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MuralComponent } from './mural.component';
-import { MissionService, PendingMissionRow } from '../../game/mission.service';
 import { SettingsService } from '../../game/settings.service';
 
 describe('MuralComponent', () => {
-  let component: MuralComponent;
-  let fixture: ComponentFixture<MuralComponent>;
-  let missionServiceSpy: {
-    addMission: ReturnType<typeof vi.fn>;
-    editMission: ReturnType<typeof vi.fn>;
-    completeMission: ReturnType<typeof vi.fn>;
-    undoCompleteMission: ReturnType<typeof vi.fn>;
-    deleteMission: ReturnType<typeof vi.fn>;
-    pendingTasks: ReturnType<typeof signal>;
-    completedTasks: ReturnType<typeof signal>;
+  let mockSettings: {
+    getSettings: ReturnType<typeof vi.fn>;
+    putSettings: ReturnType<typeof vi.fn>;
   };
-  let settingsServiceSpy: {
-    retentionDays: ReturnType<typeof signal>;
-  };
+  let injector: Injector;
 
-  const pendingRows: PendingMissionRow[] = [
-    {
-      task: {
-        id: 'p1',
-        title: 'Missão ativa',
-        difficulty: 'facil',
-        dueDate: null,
-        completed: false,
-        completedAt: null,
-      },
-      overdue: false,
-    },
-  ];
+  function createComponent(): MuralComponent {
+    return runInInjectionContext(injector, () => new MuralComponent());
+  }
 
-  const completedTasks = [
-    {
-      id: 'c1',
-      title: 'Missão concluída',
-      difficulty: 'media',
-      dueDate: null,
-      completed: true,
-      completedAt: '2026-08-18T10:00:00.000Z',
-    },
-  ];
-
-  beforeEach(async () => {
-    missionServiceSpy = {
-      addMission: vi.fn(),
-      editMission: vi.fn(),
-      completeMission: vi.fn(),
-      undoCompleteMission: vi.fn(),
-      deleteMission: vi.fn(),
-      pendingTasks: signal(pendingRows),
-      completedTasks: signal(completedTasks),
-    };
-    settingsServiceSpy = {
-      retentionDays: signal(0),
+  beforeEach(() => {
+    mockSettings = {
+      getSettings: vi.fn(() => ({ retentionDays: 0, muralActiveTab: 'pending' })),
+      putSettings: vi.fn(),
     };
 
-    await TestBed.configureTestingModule({
-      imports: [MuralComponent],
+    injector = Injector.create({
       providers: [
-        { provide: MissionService, useValue: missionServiceSpy },
-        { provide: SettingsService, useValue: settingsServiceSpy },
+        { provide: SettingsService, useValue: mockSettings },
       ],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(MuralComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+    });
   });
 
   it('should create', () => {
+    const component = createComponent();
     expect(component).toBeTruthy();
   });
 
-  it('should render tabs with role=tablist and aria-selected', () => {
-    const compiled = fixture.nativeElement as HTMLElement;
-    const tablist = compiled.querySelector('[role="tablist"]');
-    expect(tablist).toBeTruthy();
-
-    const tabs = compiled.querySelectorAll('[role="tab"]');
-    expect(tabs.length).toBe(2);
-    expect(tabs[0].textContent).toContain('Missões Ativas');
-    expect(tabs[1].textContent).toContain('Arquivo');
-    expect(tabs[0].getAttribute('aria-selected')).toBe('true');
-    expect(tabs[1].getAttribute('aria-selected')).toBe('false');
+  it('should initialize activeTab from SettingsService.getSettings()', () => {
+    const component = createComponent();
+    expect(mockSettings.getSettings).toHaveBeenCalled();
+    expect(component.activeTab()).toBe('pending');
   });
 
-  it('should render pending mission-list in the active tab by default', () => {
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('app-mission-list[section="pending"]')).toBeTruthy();
-    expect(compiled.querySelector('app-mission-list[section="completed"]')).toBeNull();
-    expect(compiled.textContent).toContain('Missão ativa');
+  it('should initialize activeTab as completed when settings stored that value', () => {
+    mockSettings.getSettings.mockReturnValue({ retentionDays: 0, muralActiveTab: 'completed' });
+
+    const component = createComponent();
+    expect(component.activeTab()).toBe('completed');
   });
 
-  it('should switch to the completed section when Arquivo tab is clicked', () => {
-    const compiled = fixture.nativeElement as HTMLElement;
-    const archiveTab = compiled.querySelectorAll('[role="tab"]')[1] as HTMLButtonElement;
-    archiveTab.click();
-    fixture.detectChanges();
+  it('should default to pending when getSettings returns undefined muralActiveTab', () => {
+    mockSettings.getSettings.mockReturnValue({ retentionDays: 0 });
 
-    expect(compiled.querySelector('app-mission-list[section="pending"]')).toBeNull();
-    expect(compiled.querySelector('app-mission-list[section="completed"]')).toBeTruthy();
-    expect(compiled.textContent).toContain('Missão concluída');
-    expect(compiled.querySelectorAll('[role="tab"]')[1].getAttribute('aria-selected')).toBe(
-      'true',
-    );
+    const component = createComponent();
+    expect(component.activeTab()).toBe('pending');
   });
 
-  it('should show empty state when there are no pending missions', () => {
-    missionServiceSpy.pendingTasks = signal([]);
-    fixture.destroy();
-    fixture = TestBed.createComponent(MuralComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+  it('should call settingsService.putSettings when selectTab is triggered', () => {
+    const component = createComponent();
+    component.selectTab('completed');
 
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.textContent).toContain('Nenhuma missão pendente');
+    expect(mockSettings.putSettings).toHaveBeenCalledWith({ muralActiveTab: 'completed' });
+    expect(component.activeTab()).toBe('completed');
   });
 
-  it('should show empty state when there are no completed missions', () => {
-    missionServiceSpy.completedTasks = signal([]);
-    fixture.destroy();
-    fixture = TestBed.createComponent(MuralComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+  it('should call settingsService.putSettings with pending when switching back', () => {
+    const component = createComponent();
+    component.selectTab('completed');
+    component.selectTab('pending');
 
-    const archiveTab = fixture.nativeElement.querySelectorAll('[role="tab"]')[1] as HTMLButtonElement;
-    archiveTab.click();
-    fixture.detectChanges();
+    expect(mockSettings.putSettings).toHaveBeenCalledWith({ muralActiveTab: 'pending' });
+    expect(component.activeTab()).toBe('pending');
+  });
 
-    expect(fixture.nativeElement.textContent).toContain('Nenhuma missão concluída');
+  it('should not reference ApiService or syncTimer', () => {
+    const component = createComponent();
+    expect((component as any).api).toBeUndefined();
+    expect((component as any).syncTimer).toBeUndefined();
   });
 });
