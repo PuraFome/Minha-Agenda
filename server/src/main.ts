@@ -3,7 +3,6 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import helmet from 'helmet';
-import session from 'express-session';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -36,21 +35,6 @@ async function bootstrap() {
     }),
   );
 
-  app.use(
-    session({
-      secret: process.env.SESSION_SECRET || 'dev-secret',
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        path: '/',
-      },
-    }),
-  );
-
   const frontendOrigin = process.env.FRONTEND_ORIGIN;
   if (!frontendOrigin) {
     throw new Error('FRONTEND_ORIGIN is not configured');
@@ -59,7 +43,7 @@ async function bootstrap() {
     process.env.NODE_ENV === 'production'
       ? [frontendOrigin]
       : [frontendOrigin, 'http://localhost:4200'];
-  app.enableCors({ origin: corsOrigins, credentials: true });
+  app.enableCors({ origin: corsOrigins });
 
   app.useGlobalPipes(
     new ValidationPipe({

@@ -1,7 +1,9 @@
+import { createHash, randomBytes, timingSafeEqual } from 'crypto';
 import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   InternalServerErrorException,
   Logger,
   NotFoundException,
@@ -13,31 +15,46 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { OAuth2Client } from 'google-auth-library';
 import { Throttle } from '@nestjs/throttler';
-import { Request, Response } from 'express';
-import { createHash, randomBytes } from 'crypto';
-import { UsersRepository } from '../db/users.repository';
-import { SessionGuard } from './session.guard';
+import type { Request, Response } from 'express';
 
-// Persisted OAuth handshake state kept server-side for the duration of the
-// redirect. Augmenting SessionData keeps `req.session` strongly typed.
-declare module 'express-session' {
-  interface SessionData {
-    state: string;
-    nonce: string;
-    code_verifier: string;
-    expires: number;
-    user: {
-      sub: string;
-      email: string;
-      name: string;
-      picture: string;
-    };
-  }
-}
+import { UsersRepository } from '../db/users.repository';
+import {
+  AuthTokensRepository,
+  HandshakeSecrets,
+} from '../db/auth-tokens.repository';
+import { SessionGuard } from './session.guard';
+import { CurrentUserId } from './current-user.decorator';
+import { extractBearerToken } from './bearer';
 
 const GOOGLE_AUTH_ENDPOINT = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
-const TEN_MINUTES_MS = 10 * 60 * 1000;
+
+/**
+ * The OAuth `state` parameter carries `<handshakeId>.<stateSecret>`: the id
+ * locates the server-side handshake row, the secret proves the callback came
+ * through the redirect we issued (CSRF defense without cookies).
+ */
+function splitState(
+  state: string | undefined,
+): { id: string; secret: string } | null {
+  if (!state) {
+    return null;
+  }
+  const separatorIndex = state.indexOf('.');
+  if (separatorIndex <= 0 || separatorIndex === state.length - 1) {
+    return null;
+  }
+  return { id: state.slice(0, separatorIndex), secret: state.slice(separatorIndex + 1) };
+}
+
+function secretsMatch(expected: string, received: string): boolean {
+  const expectedBytes = Buffer.from(expected);
+  const receivedBytes = Buffer.from(received);
+  if (expectedBytes.length !== receivedBytes.length) {
+    return false;
+  }
+  return timingSafeEqual(expectedBytes, receivedBytes);
+}
 
 @Controller('auth')
 @Throttle({ auth: {} })
@@ -47,103 +64,56 @@ export class AuthController {
   constructor(
     private readonly config: ConfigService,
     private readonly users: UsersRepository,
+    private readonly tokens: AuthTokensRepository,
   ) {}
 
   @Get('google')
-  googleLogin(@Req() req: Request, @Res() res: Response): void {
-    const clientId = this.config.get<string>('GOOGLE_CLIENT_ID');
-    if (!clientId) {
-      this.logger.error(
-        'GOOGLE_CLIENT_ID is not configured; cannot start Google OAuth flow',
-      );
-      throw new InternalServerErrorException('GOOGLE_CLIENT_ID is not configured');
-    }
-
-    const apiPublicUrl = this.config.get<string>('API_PUBLIC_URL');
-    if (!apiPublicUrl) {
-      this.logger.error(
-        'API_PUBLIC_URL is not configured; cannot build OAuth redirect_uri',
-      );
-      throw new InternalServerErrorException('API_PUBLIC_URL is not configured');
-    }
+  async googleLogin(@Res() res: Response): Promise<void> {
+    const clientId = this.requireConfig('GOOGLE_CLIENT_ID');
+    const apiPublicUrl = this.requireConfig('API_PUBLIC_URL');
 
     // PKCE (S256): verifier 43 chars, challenge = BASE64URL(SHA256(verifier)).
-    const codeVerifier = randomBytes(32).toString('base64url');
-    const codeChallenge = createHash('sha256')
-      .update(codeVerifier)
-      .digest('base64url');
-    const state = randomBytes(32).toString('hex');
-    const nonce = randomBytes(16).toString('hex');
-
-    req.session.state = state;
-    req.session.nonce = nonce;
-    req.session.code_verifier = codeVerifier;
-    req.session.expires = Date.now() + TEN_MINUTES_MS;
+    const secrets: HandshakeSecrets = {
+      stateSecret: randomBytes(24).toString('base64url'),
+      nonce: randomBytes(16).toString('hex'),
+      codeVerifier: randomBytes(32).toString('base64url'),
+    };
+    const handshakeId = await this.tokens.createHandshake(secrets);
 
     const params = new URLSearchParams({
       client_id: clientId,
       redirect_uri: `${apiPublicUrl}/api/auth/callback`,
       response_type: 'code',
       scope: 'openid email profile',
-      state,
-      nonce,
-      code_challenge: codeChallenge,
+      state: `${handshakeId}.${secrets.stateSecret}`,
+      nonce: secrets.nonce,
+      code_challenge: createHash('sha256')
+        .update(secrets.codeVerifier)
+        .digest('base64url'),
       code_challenge_method: 'S256',
       access_type: 'offline',
     });
 
-    const authUrl = `${GOOGLE_AUTH_ENDPOINT}?${params.toString()}`;
-    res.redirect(authUrl);
+    res.redirect(`${GOOGLE_AUTH_ENDPOINT}?${params.toString()}`);
   }
 
   @Get('callback')
   async googleCallback(@Req() req: Request, @Res() res: Response): Promise<void> {
-    const clientId = this.config.get<string>('GOOGLE_CLIENT_ID');
-    if (!clientId) {
-      this.logger.error(
-        'GOOGLE_CLIENT_ID is not configured; cannot verify Google callback',
-      );
-      throw new InternalServerErrorException('GOOGLE_CLIENT_ID is not configured');
-    }
-    const clientSecret = this.config.get<string>('GOOGLE_CLIENT_SECRET');
-    if (!clientSecret) {
-      this.logger.error(
-        'GOOGLE_CLIENT_SECRET is not configured; cannot exchange Google token',
-      );
-      throw new InternalServerErrorException(
-        'GOOGLE_CLIENT_SECRET is not configured',
-      );
-    }
-    const apiPublicUrl = this.config.get<string>('API_PUBLIC_URL');
-    if (!apiPublicUrl) {
-      this.logger.error(
-        'API_PUBLIC_URL is not configured; cannot build token redirect_uri',
-      );
-      throw new InternalServerErrorException('API_PUBLIC_URL is not configured');
-    }
-    const frontendOrigin = this.config.get<string>('FRONTEND_ORIGIN');
-    if (!frontendOrigin) {
-      this.logger.error(
-        'FRONTEND_ORIGIN is not configured; cannot redirect after login',
-      );
-      throw new InternalServerErrorException('FRONTEND_ORIGIN is not configured');
-    }
-    // CORS matches the bare Origin header (no path), but GitHub Pages project
-    // sites serve the SPA under /<repo>/ — so the post-login redirect target
-    // is configured separately and falls back to FRONTEND_ORIGIN.
-    const frontendRedirectUrl =
-      this.config.get<string>('FRONTEND_REDIRECT_URL') ?? frontendOrigin;
+    const clientId = this.requireConfig('GOOGLE_CLIENT_ID');
+    const clientSecret = this.requireConfig('GOOGLE_CLIENT_SECRET');
+    const apiPublicUrl = this.requireConfig('API_PUBLIC_URL');
+    const frontendRedirectUrl = this.frontendRedirectUrl();
 
-    // (1) CSRF / state validation. Reject without proceeding if the session
-    // handshake is missing, expired, or the echoed state does not match.
-    const sessionState = req.session.state;
-    const sessionExpires = req.session.expires;
-    const stateParam = req.query.state as string | undefined;
+    // (1) CSRF/state validation against the single-use server-side handshake.
+    // Unknown id, expired row, or secret mismatch all collapse to 403.
+    const parsedState = splitState(req.query.state as string | undefined);
+    const handshake = parsedState
+      ? await this.tokens.consumeHandshake(parsedState.id)
+      : null;
     if (
-      !sessionState ||
-      !sessionExpires ||
-      sessionExpires < Date.now() ||
-      sessionState !== stateParam
+      !parsedState ||
+      !handshake ||
+      !secretsMatch(handshake.stateSecret, parsedState.secret)
     ) {
       res.status(403).send();
       return;
@@ -162,7 +132,7 @@ export class AuthController {
         client_secret: clientSecret,
         redirect_uri: `${apiPublicUrl}/api/auth/callback`,
         grant_type: 'authorization_code',
-        code_verifier: req.session.code_verifier ?? '',
+        code_verifier: handshake.codeVerifier,
       }).toString(),
     });
     const tokenJson = (await tokenResponse.json()) as {
@@ -182,33 +152,25 @@ export class AuthController {
       res.status(403).send();
       return;
     }
-    if (payload.aud !== clientId || payload.nonce !== req.session.nonce) {
+    if (payload.aud !== clientId || payload.nonce !== handshake.nonce) {
       res.status(403).send();
       return;
     }
 
-    // (4) Extract profile and persist the user + consent timestamp.
+    // (4) Persist user + consent, mint a bearer session and hand it to the SPA
+    // through the redirect fragment — browsers never send `#...` to servers.
     const { sub, email = '', name = '', picture = '' } = payload;
-    await this.users.upsertByGoogleSub(sub, email, name, picture);
+    const userId = await this.users.upsertByGoogleSub(sub, email, name, picture);
     await this.users.saveConsent(sub, new Date());
+    const sessionToken = await this.tokens.createSession(userId);
 
-    // (5) Session-fixation defense: regenerate before writing auth state.
-    req.session.regenerate((err) => {
-      if (err) {
-        this.logger.error(`session regeneration failed: ${err.message}`);
-        res.status(500).send();
-        return;
-      }
-      req.session.user = { sub, email, name, picture };
-      // (6) Redirect back to the frontend.
-      res.redirect(frontendRedirectUrl);
-    });
+    res.redirect(`${frontendRedirectUrl}#token=${sessionToken}`);
   }
 
   // DEV-ONLY mock login for automated QA; disabled unless ALLOW_DEV_LOGIN=true
   // and NODE_ENV!==production; never enable in production.
   @Get('dev-login')
-  async devLogin(@Req() req: Request, @Res() res: Response): Promise<void> {
+  async devLogin(@Res() res: Response): Promise<void> {
     const allowed =
       this.config.get<string>('ALLOW_DEV_LOGIN') === 'true' &&
       process.env.NODE_ENV !== 'production';
@@ -216,70 +178,70 @@ export class AuthController {
       throw new NotFoundException();
     }
 
-    const frontendOrigin = this.config.get<string>('FRONTEND_ORIGIN');
-    if (!frontendOrigin) {
-      this.logger.error(
-        'FRONTEND_ORIGIN is not configured; cannot redirect after dev login',
-      );
-      throw new InternalServerErrorException('FRONTEND_ORIGIN is not configured');
-    }
-    const frontendRedirectUrl =
-      this.config.get<string>('FRONTEND_REDIRECT_URL') ?? frontendOrigin;
-
     // Fixed deterministic dev profile — never accept arbitrary sub/email.
     const sub = 'dev-user-local';
     const email = 'dev-user-local@example.com';
     const name = 'Dev User';
     const picture = '';
 
-    await this.users.upsertByGoogleSub(sub, email, name, picture);
+    const userId = await this.users.upsertByGoogleSub(sub, email, name, picture);
     await this.users.saveConsent(sub, new Date());
 
-    req.session.regenerate((err) => {
-      if (err) {
-        this.logger.error(`session regeneration failed: ${err.message}`);
-        res.status(500).send();
-        return;
-      }
-      req.session.user = { sub, email, name, picture };
-      res.redirect(frontendRedirectUrl);
-    });
+    const sessionToken = await this.tokens.createSession(userId);
+    res.redirect(`${this.frontendRedirectUrl()}#token=${sessionToken}`);
   }
 
   @Post('logout')
-  logout(@Req() req: Request, @Res() res: Response): void {
-    req.session.destroy((err) => {
-      if (err) {
-        this.logger.error(`session destroy failed: ${err.message}`);
-        res.status(500).send();
-        return;
-      }
-      // express-session clears the cookie on destroy, but clear it explicitly
-      // so the browser drops the stale session id immediately.
-      res.clearCookie('connect.sid');
-      res.status(200).send({ ok: true });
-    });
+  @HttpCode(200)
+  async logout(@Req() req: Request): Promise<{ ok: boolean }> {
+    const token = extractBearerToken(req);
+    if (token) {
+      await this.tokens.deleteSession(token);
+    }
+    return { ok: true };
   }
 
   @UseGuards(SessionGuard)
   @Delete('account')
-  async deleteAccount(@Req() req: Request, @Res() res: Response): Promise<void> {
-    const sub = req.session.user?.sub;
+  async deleteAccount(
+    @Req() req: Request,
+    @CurrentUserId() sub: string | undefined,
+  ): Promise<{ ok: boolean }> {
+    void req;
     if (!sub) {
-      res.status(401).send();
-      return;
+      throw new NotFoundException();
     }
 
+    // auth_sessions rows cascade via users.user_id ON DELETE CASCADE.
     await this.users.deleteBySub(sub);
 
-    req.session.destroy((err) => {
-      if (err) {
-        this.logger.error(`session destroy failed: ${err.message}`);
-        res.status(500).send();
-        return;
-      }
-      res.clearCookie('connect.sid');
-      res.status(200).send({ ok: true });
-    });
+    const token = extractBearerToken(req);
+    if (token) {
+      await this.tokens.deleteSession(token);
+    }
+    return { ok: true };
+  }
+
+  private requireConfig(key: string): string {
+    const value = this.config.get<string>(key);
+    if (!value) {
+      this.logger.error(`${key} is not configured`);
+      throw new InternalServerErrorException(`${key} is not configured`);
+    }
+    return value;
+  }
+
+  /**
+   * Post-login landing URL. CORS matches the bare Origin header (no path),
+   * while GitHub Pages project sites serve the SPA under /<repo>/ — so the
+   * redirect target is a separate variable falling back to FRONTEND_ORIGIN.
+   */
+  private frontendRedirectUrl(): string {
+    const origin = this.config.get<string>('FRONTEND_ORIGIN');
+    if (!origin) {
+      this.logger.error('FRONTEND_ORIGIN is not configured');
+      throw new InternalServerErrorException('FRONTEND_ORIGIN is not configured');
+    }
+    return this.config.get<string>('FRONTEND_REDIRECT_URL') ?? origin;
   }
 }

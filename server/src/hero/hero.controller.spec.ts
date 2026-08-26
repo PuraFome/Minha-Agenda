@@ -1,43 +1,24 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import {
-  Controller,
-  Get,
-  INestApplication,
-  Module,
-  Req,
-  Res,
-} from '@nestjs/common';
+import { INestApplication, Module, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
-import { Request, Response } from 'express';
-import session from 'express-session';
 // @ts-expect-error supertest ships no bundled types in this project (no new npm dep)
 import request from 'supertest';
 import { HeroModule } from './hero.module';
 import { PgService } from '../db/pg.service';
 import { UsersRepository } from '../db/users.repository';
+import { AuthTokensRepository } from '../db/auth-tokens.repository';
 import { HeroesRepository, Hero, HeroClass } from '../db/heroes.repository';
-import { ValidationPipe } from '@nestjs/common';
 
 const UUID = '11111111-1111-1111-1111-111111111111';
+const BEARER = { Authorization: 'Bearer ma_test-token' };
 
-// Test-only controller that establishes an authenticated session by writing
-// `req.session.user`. Lives in the spec (not application source) so the 200
-// path of HeroController can be exercised hermetically via a cookie-bearing
-// agent.
-@Controller('__test_session')
-class TestSessionController {
-  @Get('login')
-  login(@Req() req: Request, @Res() res: Response): void {
-    req.session.user = {
-      sub: 'sub-1',
-      email: 'a@b.c',
-      name: 'Name',
-      picture: 'pic',
-    };
-    res.status(200).send();
-  }
-}
+const tokensRepo: Partial<AuthTokensRepository> = {
+  findUserByToken: async (token: string) =>
+    token === 'ma_test-token'
+      ? { sub: 'sub-1', email: 'a@b.c', name: 'Name', picture: 'pic' }
+      : null,
+};
 
 // In-memory HeroesRepository stub that mirrors the real clamping behavior of
 // `addXp` (GREATEST(0, total_xp + delta)).
@@ -89,7 +70,6 @@ const usersRepo: Partial<UsersRepository> = {
     }),
     HeroModule,
   ],
-  controllers: [TestSessionController],
 })
 class TestAppModule {}
 
@@ -108,6 +88,8 @@ describe('HeroController (GET/PUT/PATCH/DELETE /api/hero)', () => {
       .useValue(usersRepo)
       .overrideProvider(HeroesRepository)
       .useValue(heroesRepo)
+      .overrideProvider(AuthTokensRepository)
+      .useValue(tokensRepo)
       .compile();
     app = moduleRef.createNestApplication();
     app.setGlobalPrefix('api');
@@ -117,14 +99,6 @@ describe('HeroController (GET/PUT/PATCH/DELETE /api/hero)', () => {
         whitelist: true,
         forbidNonWhitelisted: true,
         transform: true,
-      }),
-    );
-    app.use(
-      session({
-        secret: 'test',
-        resave: false,
-        saveUninitialized: false,
-        cookie: { httpOnly: true, secure: false, sameSite: 'lax' },
       }),
     );
     await app.init();
@@ -139,17 +113,16 @@ describe('HeroController (GET/PUT/PATCH/DELETE /api/hero)', () => {
   });
 
   it('GET /api/hero returns 404 for a user with no hero', async () => {
-    const agent = request.agent(app.getHttpServer());
-    await agent.get('/api/__test_session/login');
-    const res = await agent.get('/api/hero');
+    const res = await request(app.getHttpServer())
+      .get('/api/hero')
+      .set(BEARER);
     expect(res.status).toBe(404);
   }, 120000);
 
   it('PUT then GET returns the created hero', async () => {
-    const agent = request.agent(app.getHttpServer());
-    await agent.get('/api/__test_session/login');
-    const putRes = await agent
+    const putRes = await request(app.getHttpServer())
       .put('/api/hero')
+      .set(BEARER)
       .send({ name: 'Zé Droguinha', heroClass: 'mago' });
     expect(putRes.status).toBe(200);
     expect(putRes.body).toEqual({
@@ -158,7 +131,9 @@ describe('HeroController (GET/PUT/PATCH/DELETE /api/hero)', () => {
       totalXp: 0,
     });
 
-    const getRes = await agent.get('/api/hero');
+    const getRes = await request(app.getHttpServer())
+      .get('/api/hero')
+      .set(BEARER);
     expect(getRes.status).toBe(200);
     expect(getRes.body).toEqual({
       name: 'Zé Droguinha',
@@ -168,42 +143,50 @@ describe('HeroController (GET/PUT/PATCH/DELETE /api/hero)', () => {
   }, 120000);
 
   it('PATCH /api/hero/xp with delta=-5 on 0 clamps to 0', async () => {
-    const agent = request.agent(app.getHttpServer());
-    await agent.get('/api/__test_session/login');
-    await agent
+    await request(app.getHttpServer())
       .put('/api/hero')
+      .set(BEARER)
       .send({ name: 'Zé Droguinha', heroClass: 'mago' });
 
-    const patchRes = await agent.patch('/api/hero/xp').send({ delta: -5 });
+    const patchRes = await request(app.getHttpServer())
+      .patch('/api/hero/xp')
+      .set(BEARER)
+      .send({ delta: -5 });
     expect(patchRes.status).toBe(200);
     expect(patchRes.body.totalXp).toBe(0);
 
-    const getRes = await agent.get('/api/hero');
+    const getRes = await request(app.getHttpServer())
+      .get('/api/hero')
+      .set(BEARER);
     expect(getRes.body.totalXp).toBe(0);
   }, 120000);
 
   it('PATCH /api/hero/xp with non-int delta returns 400', async () => {
-    const agent = request.agent(app.getHttpServer());
-    await agent.get('/api/__test_session/login');
-    const res = await agent.patch('/api/hero/xp').send({ delta: 1.5 });
+    const res = await request(app.getHttpServer())
+      .patch('/api/hero/xp')
+      .set(BEARER)
+      .send({ delta: 1.5 });
     expect(res.status).toBe(400);
   }, 120000);
 
   it('DELETE /api/hero removes the hero (204)', async () => {
-    const agent = request.agent(app.getHttpServer());
-    await agent.get('/api/__test_session/login');
-    await agent
+    await request(app.getHttpServer())
       .put('/api/hero')
+      .set(BEARER)
       .send({ name: 'Zé Droguinha', heroClass: 'mago' });
 
-    const delRes = await agent.delete('/api/hero');
+    const delRes = await request(app.getHttpServer())
+      .delete('/api/hero')
+      .set(BEARER);
     expect(delRes.status).toBe(204);
 
-    const getRes = await agent.get('/api/hero');
+    const getRes = await request(app.getHttpServer())
+      .get('/api/hero')
+      .set(BEARER);
     expect(getRes.status).toBe(404);
   }, 120000);
 
-  it('GET /api/hero is rejected (403) when no session is present', async () => {
+  it('GET /api/hero is rejected (403) when no bearer token is present', async () => {
     const res = await request(app.getHttpServer()).get('/api/hero');
     expect(res.status).toBe(403);
   }, 120000);
