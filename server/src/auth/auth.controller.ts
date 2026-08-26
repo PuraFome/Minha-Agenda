@@ -128,6 +128,11 @@ export class AuthController {
       );
       throw new InternalServerErrorException('FRONTEND_ORIGIN is not configured');
     }
+    // CORS matches the bare Origin header (no path), but GitHub Pages project
+    // sites serve the SPA under /<repo>/ — so the post-login redirect target
+    // is configured separately and falls back to FRONTEND_ORIGIN.
+    const frontendRedirectUrl =
+      this.config.get<string>('FRONTEND_REDIRECT_URL') ?? frontendOrigin;
 
     // (1) CSRF / state validation. Reject without proceeding if the session
     // handshake is missing, expired, or the echoed state does not match.
@@ -196,7 +201,7 @@ export class AuthController {
       }
       req.session.user = { sub, email, name, picture };
       // (6) Redirect back to the frontend.
-      res.redirect(frontendOrigin);
+      res.redirect(frontendRedirectUrl);
     });
   }
 
@@ -218,6 +223,8 @@ export class AuthController {
       );
       throw new InternalServerErrorException('FRONTEND_ORIGIN is not configured');
     }
+    const frontendRedirectUrl =
+      this.config.get<string>('FRONTEND_REDIRECT_URL') ?? frontendOrigin;
 
     // Fixed deterministic dev profile — never accept arbitrary sub/email.
     const sub = 'dev-user-local';
@@ -235,7 +242,7 @@ export class AuthController {
         return;
       }
       req.session.user = { sub, email, name, picture };
-      res.redirect(frontendOrigin);
+      res.redirect(frontendRedirectUrl);
     });
   }
 

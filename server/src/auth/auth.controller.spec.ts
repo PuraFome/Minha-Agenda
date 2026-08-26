@@ -128,6 +128,7 @@ describe('AuthController', () => {
     // Reset dev-login feature flag + NODE_ENV so production/flag tests don't
     // leak into other suites.
     configMap.ALLOW_DEV_LOGIN = undefined;
+    configMap.FRONTEND_REDIRECT_URL = undefined;
     process.env.NODE_ENV = 'development';
     // Default: token endpoint returns an id_token; verifyIdToken returns a
     // valid payload (aud + nonce match the seeded session).
@@ -215,6 +216,19 @@ describe('AuthController', () => {
       expect(usersRepoStub.saveConsent).toHaveBeenCalledWith(
         'sub-1',
         expect.any(Date),
+      );
+    }, 120000);
+
+    it('redirects to FRONTEND_REDIRECT_URL when set (SPA under sub-path)', async () => {
+      configMap.FRONTEND_REDIRECT_URL = 'https://frontend.example.com/Minha-Agenda/';
+      const agent = request.agent(app.getHttpServer());
+      await agent.get('/api/__test_handshake/seed');
+
+      const res = await agent.get('/api/auth/callback?state=STATE&code=CODE');
+
+      expect(res.status).toBe(302);
+      expect(res.headers.location).toBe(
+        'https://frontend.example.com/Minha-Agenda/',
       );
     }, 120000);
 
@@ -328,6 +342,19 @@ describe('AuthController', () => {
       expect(usersRepoStub.saveConsent).toHaveBeenCalledWith(
         'dev-user-local',
         expect.any(Date),
+      );
+    }, 120000);
+
+    it('redirects to FRONTEND_REDIRECT_URL when set (SPA under sub-path)', async () => {
+      configMap.ALLOW_DEV_LOGIN = 'true';
+      configMap.FRONTEND_REDIRECT_URL = 'https://frontend.example.com/Minha-Agenda/';
+      const agent = request.agent(app.getHttpServer());
+
+      const res = await agent.get('/api/auth/dev-login');
+
+      expect(res.status).toBe(302);
+      expect(res.headers.location).toBe(
+        'https://frontend.example.com/Minha-Agenda/',
       );
     }, 120000);
 
