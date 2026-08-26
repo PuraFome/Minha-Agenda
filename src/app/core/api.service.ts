@@ -26,7 +26,7 @@ export class ApiService {
   getHero(): Observable<Hero> {
     const url = `${environment.apiUrl}/api/hero`;
     return this.http
-      .get<Hero>(url, { withCredentials: true })
+      .get<Hero>(url)
       .pipe(catchError((err) => this.handleError(err)));
   }
 
@@ -34,21 +34,21 @@ export class ApiService {
     const url = `${environment.apiUrl}/api/hero`;
     const body = { name: hero.name, heroClass: hero.heroClass };
     return this.http
-      .put<void>(url, body, { withCredentials: true })
+      .put<void>(url, body)
       .pipe(catchError((err) => this.handleError(err)));
   }
 
   addXp(delta: number): Observable<void> {
     const url = `${environment.apiUrl}/api/hero/xp`;
     return this.http
-      .patch<void>(url, { delta }, { withCredentials: true })
+      .patch<void>(url, { delta })
       .pipe(catchError((err) => this.handleError(err)));
   }
 
   deleteHero(): Observable<void> {
     const url = `${environment.apiUrl}/api/hero`;
     return this.http
-      .delete<void>(url, { withCredentials: true })
+      .delete<void>(url)
       .pipe(catchError((err) => this.handleError(err)));
   }
 
@@ -57,7 +57,7 @@ export class ApiService {
   listMissions(): Observable<Mission[]> {
     const url = `${environment.apiUrl}/api/missions`;
     return this.http
-      .get<Mission[]>(url, { withCredentials: true })
+      .get<Mission[]>(url)
       .pipe(catchError((err) => this.handleError(err)));
   }
 
@@ -79,28 +79,28 @@ export class ApiService {
       body.dueDate = mission.dueDate;
     }
     return this.http
-      .post<Mission>(url, body, { withCredentials: true })
+      .post<Mission>(url, body)
       .pipe(catchError((err) => this.handleError(err)));
   }
 
   updateMission(id: string, patch: Partial<Mission>): Observable<void> {
     const url = `${environment.apiUrl}/api/missions/${id}`;
     return this.http
-      .put<void>(url, patch, { withCredentials: true })
+      .put<void>(url, patch)
       .pipe(catchError((err) => this.handleError(err)));
   }
 
   setMissionComplete(id: string, completed: boolean): Observable<void> {
     const url = `${environment.apiUrl}/api/missions/${id}/complete`;
     return this.http
-      .patch<void>(url, { completed }, { withCredentials: true })
+      .patch<void>(url, { completed })
       .pipe(catchError((err) => this.handleError(err)));
   }
 
   deleteMission(id: string): Observable<void> {
     const url = `${environment.apiUrl}/api/missions/${id}`;
     return this.http
-      .delete<void>(url, { withCredentials: true })
+      .delete<void>(url)
       .pipe(catchError((err) => this.handleError(err)));
   }
 
@@ -109,14 +109,14 @@ export class ApiService {
   getSettings(): Observable<Settings> {
     const url = `${environment.apiUrl}/api/settings`;
     return this.http
-      .get<Settings>(url, { withCredentials: true })
+      .get<Settings>(url)
       .pipe(catchError((err) => this.handleError(err)));
   }
 
   putSettings(settings: Partial<Settings>): Observable<void> {
     const url = `${environment.apiUrl}/api/settings`;
     return this.http
-      .put<void>(url, settings, { withCredentials: true })
+      .put<void>(url, settings)
       .pipe(catchError((err) => this.handleError(err)));
   }
 

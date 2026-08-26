@@ -36,7 +36,7 @@ function mockHttp(): MockHttp {
 }
 
 describe('ApiService', () => {
-  it('getHero() GETs /api/hero with credentials', () => {
+  it('getHero() GETs /api/hero', () => {
     const http = mockHttp();
     const hero: Hero = { name: 'A', heroClass: 'mago', totalXp: 0 };
     http.get.mockReturnValue(of(hero));
@@ -44,7 +44,7 @@ describe('ApiService', () => {
 
     service.getHero().subscribe((res) => expect(res).toEqual(hero));
 
-    expect(http.get).toHaveBeenCalledWith(`${API}/api/hero`, { withCredentials: true });
+    expect(http.get).toHaveBeenCalledWith(`${API}/api/hero`);
   });
 
   it('putHero() PUTs /api/hero with only {name, heroClass}', () => {
@@ -55,11 +55,10 @@ describe('ApiService', () => {
 
     service.putHero(hero).subscribe();
 
-    expect(http.put).toHaveBeenCalledWith(
-      `${API}/api/hero`,
-      { name: 'B', heroClass: 'ladino' },
-      { withCredentials: true },
-    );
+    expect(http.put).toHaveBeenCalledWith(`${API}/api/hero`, {
+      name: 'B',
+      heroClass: 'ladino',
+    });
   });
 
   it('putHero() strips totalXp from the body (regression: forbidNonWhitelisted)', () => {
@@ -82,11 +81,7 @@ describe('ApiService', () => {
 
     service.addXp(-5).subscribe();
 
-    expect(http.patch).toHaveBeenCalledWith(
-      `${API}/api/hero/xp`,
-      { delta: -5 },
-      { withCredentials: true },
-    );
+    expect(http.patch).toHaveBeenCalledWith(`${API}/api/hero/xp`, { delta: -5 });
   });
 
   it('deleteHero() DELETEs /api/hero', () => {
@@ -96,9 +91,7 @@ describe('ApiService', () => {
 
     service.deleteHero().subscribe();
 
-    expect(http.delete).toHaveBeenCalledWith(`${API}/api/hero`, {
-      withCredentials: true,
-    });
+    expect(http.delete).toHaveBeenCalledWith(`${API}/api/hero`);
   });
 
   it('listMissions() GETs /api/missions', () => {
@@ -111,9 +104,7 @@ describe('ApiService', () => {
 
     service.listMissions().subscribe((res) => expect(res).toEqual(missions));
 
-    expect(http.get).toHaveBeenCalledWith(`${API}/api/missions`, {
-      withCredentials: true,
-    });
+    expect(http.get).toHaveBeenCalledWith(`${API}/api/missions`);
   });
 
   it('createMission() POSTs /api/missions with only whitelisted fields', () => {
@@ -129,11 +120,11 @@ describe('ApiService', () => {
 
     service.createMission(mission).subscribe((res) => expect(res).toEqual(mission));
 
-    expect(http.post).toHaveBeenCalledWith(
-      `${API}/api/missions`,
-      { id: '2', title: 'X', difficulty: 'media' },
-      { withCredentials: true },
-    );
+    expect(http.post).toHaveBeenCalledWith(`${API}/api/missions`, {
+      id: '2',
+      title: 'X',
+      difficulty: 'media',
+    });
   });
 
   it('createMission() strips completed/completedAt and omits undefined dueDate (regression: forbidNonWhitelisted)', () => {
@@ -187,11 +178,9 @@ describe('ApiService', () => {
 
     service.updateMission('3', { completed: true }).subscribe();
 
-    expect(http.put).toHaveBeenCalledWith(
-      `${API}/api/missions/3`,
-      { completed: true },
-      { withCredentials: true },
-    );
+    expect(http.put).toHaveBeenCalledWith(`${API}/api/missions/3`, {
+      completed: true,
+    });
   });
 
   it('setMissionComplete() PATCHes /api/missions/:id/complete', () => {
@@ -201,11 +190,9 @@ describe('ApiService', () => {
 
     service.setMissionComplete('4', true).subscribe();
 
-    expect(http.patch).toHaveBeenCalledWith(
-      `${API}/api/missions/4/complete`,
-      { completed: true },
-      { withCredentials: true },
-    );
+    expect(http.patch).toHaveBeenCalledWith(`${API}/api/missions/4/complete`, {
+      completed: true,
+    });
   });
 
   it('deleteMission() DELETEs /api/missions/:id', () => {
@@ -215,9 +202,7 @@ describe('ApiService', () => {
 
     service.deleteMission('5').subscribe();
 
-    expect(http.delete).toHaveBeenCalledWith(`${API}/api/missions/5`, {
-      withCredentials: true,
-    });
+    expect(http.delete).toHaveBeenCalledWith(`${API}/api/missions/5`);
   });
 
   it('getSettings() GETs /api/settings', () => {
@@ -228,9 +213,7 @@ describe('ApiService', () => {
 
     service.getSettings().subscribe((res) => expect(res).toEqual(settings));
 
-    expect(http.get).toHaveBeenCalledWith(`${API}/api/settings`, {
-      withCredentials: true,
-    });
+    expect(http.get).toHaveBeenCalledWith(`${API}/api/settings`);
   });
 
   it('putSettings() PUTs /api/settings', () => {
@@ -241,9 +224,7 @@ describe('ApiService', () => {
 
     service.putSettings(settings).subscribe();
 
-    expect(http.put).toHaveBeenCalledWith(`${API}/api/settings`, settings, {
-      withCredentials: true,
-    });
+    expect(http.put).toHaveBeenCalledWith(`${API}/api/settings`, settings);
   });
 
   it('putSettings() accepts a Partial<Settings> (regression: Task 10 type widening)', () => {
@@ -254,9 +235,7 @@ describe('ApiService', () => {
 
     service.putSettings(partial).subscribe();
 
-    expect(http.put).toHaveBeenCalledWith(`${API}/api/settings`, partial, {
-      withCredentials: true,
-    });
+    expect(http.put).toHaveBeenCalledWith(`${API}/api/settings`, partial);
   });
 
   it('maps a 401 response to AuthRequiredError', () => {
