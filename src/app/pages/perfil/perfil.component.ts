@@ -1,14 +1,11 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../../core/auth.service';
 import { GameService } from '../../game/game.service';
 import { MissionService } from '../../game/mission.service';
 import { SettingsService } from '../../game/settings.service';
 import { HeroCardComponent } from '../../hero/hero-card.component';
 import { HeroSetupComponent } from '../../hero/hero-setup.component';
-import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-perfil',
@@ -21,7 +18,6 @@ export class PerfilComponent {
   private readonly gameService = inject(GameService);
   private readonly missionService = inject(MissionService);
   private readonly settingsService = inject(SettingsService);
-  private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
 
   readonly hero = this.gameService.hero;
@@ -64,10 +60,7 @@ export class PerfilComponent {
       return;
     }
     try {
-      await firstValueFrom(
-        this.http.delete<void>(`${environment.apiUrl}/api/auth/account`, { withCredentials: true }),
-      );
-      this.auth.user.set(null);
+      await this.auth.deleteAccount();
       localStorage.clear();
       this.router.navigate(['/login']);
     } catch (err) {
