@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://purafome.github.io/Minha-Agenda/',
+  apiUrl: 'https://minha-agenda-noab.onrender.com',
 };
