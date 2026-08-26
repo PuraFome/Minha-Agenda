@@ -55,6 +55,11 @@ export class PerfilComponent {
     this.missionService.purgeExpired();
   }
 
+  async logout(): Promise<void> {
+    await this.auth.logout();
+    this.router.navigate(['/login']);
+  }
+
   async deleteAccount(): Promise<void> {
     if (!window.confirm('Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita.')) {
       return;

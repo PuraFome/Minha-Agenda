@@ -17,6 +17,9 @@
         <h1 id="identity-title" class="perfil__identity-name">{{ u.name || 'Usuário' }}</h1>
         <p class="perfil__identity-email">{{ u.email }}</p>
       </div>
+      <button type="button" class="perfil__logout-btn" (click)="logout()">
+        Sair
+      </button>
     </section>
   }
 
