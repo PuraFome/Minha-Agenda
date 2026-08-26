@@ -10,6 +10,11 @@ async function bootstrap() {
 
   app.setGlobalPrefix('api');
 
+  // Render terminates TLS upstream, so Express sees plain HTTP. Without
+  // trusting the proxy, express-session with secure cookies silently drops
+  // Set-Cookie and every OAuth handshake 403s at the state check.
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+
   app.getHttpAdapter().getInstance().disable('x-powered-by');
   app.use(
     helmet({
