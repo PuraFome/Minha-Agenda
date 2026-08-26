@@ -6,11 +6,13 @@ import { HttpClient } from '@angular/common/http';
 import { SettingsService } from './settings.service';
 import { ApiService } from '../core/api.service';
 
+type MockHandlers = {
+  next?: (value: unknown) => void;
+  error?: (error: unknown) => void;
+};
+
 interface MockObservable {
-  subscribe: (handlers: {
-    next?: (value: unknown) => void;
-    error?: (error: unknown) => void;
-  }) => { unsubscribe: () => void };
+  subscribe: (handlers: MockHandlers) => { unsubscribe: () => void };
 }
 
 function silentObservable(): MockObservable {
@@ -138,7 +140,7 @@ describe('SettingsService', () => {
 
   it('should hydrate from api.getSettings() and cache both fields', () => {
     mockApi.getSettings.mockReturnValue({
-      subscribe: (handlers) => {
+      subscribe: (handlers: MockHandlers) => {
         handlers.next?.({ retentionDays: 14, muralActiveTab: 'completed' });
         return { unsubscribe: () => {} };
       },
@@ -156,7 +158,7 @@ describe('SettingsService', () => {
   it('should keep local cache when api.getSettings() errors', () => {
     mockLocalStorage['ma.settings.v1'] = JSON.stringify({ retentionDays: 21, muralActiveTab: 'pending' });
     mockApi.getSettings.mockReturnValue({
-      subscribe: (handlers) => {
+      subscribe: (handlers: MockHandlers) => {
         handlers.error?.(new Error('401'));
         return { unsubscribe: () => {} };
       },
