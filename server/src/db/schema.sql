@@ -15,6 +15,25 @@ CREATE TABLE IF NOT EXISTS users (
   created_at timestamptz DEFAULT now()
 );
 
+-- Short-lived OAuth handshake state: PKCE verifier + nonce + state secret,
+-- keyed by an id embedded in the OAuth `state` parameter.
+CREATE TABLE IF NOT EXISTS oauth_handshakes (
+  id text PRIMARY KEY,
+  state_secret text NOT NULL,
+  nonce text NOT NULL,
+  code_verifier text NOT NULL,
+  expires_at timestamptz NOT NULL
+);
+
+-- Bearer sessions: sha256(token) -> user, so sessions survive process
+-- restarts and can be revoked per-token on logout.
+CREATE TABLE IF NOT EXISTS auth_sessions (
+  token_hash text PRIMARY KEY,
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  expires_at timestamptz NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS user_data (
   user_id uuid REFERENCES users(id) ON DELETE CASCADE,
   collection text NOT NULL,

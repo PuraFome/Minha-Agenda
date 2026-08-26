@@ -4,6 +4,7 @@ import { UsersRepository } from './users.repository';
 import { UserSettingsRepository } from './user-settings.repository';
 import { HeroesRepository } from './heroes.repository';
 import { MissionsRepository } from './missions.repository';
+import { AuthTokensRepository } from './auth-tokens.repository';
 
 @Module({
   imports: [DatabaseModule],
@@ -12,12 +13,14 @@ import { MissionsRepository } from './missions.repository';
     UserSettingsRepository,
     HeroesRepository,
     MissionsRepository,
+    AuthTokensRepository,
   ],
   exports: [
     UsersRepository,
     UserSettingsRepository,
     HeroesRepository,
     MissionsRepository,
+    AuthTokensRepository,
   ],
 })
 export class RepositoriesModule {}
