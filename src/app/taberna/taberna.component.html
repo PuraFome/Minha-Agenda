@@ -1,0 +1,58 @@
+<section class="taberna" aria-labelledby="taberna-title">
+  <div class="taberna__backdrop" aria-hidden="true">
+    <span class="taberna__torch taberna__torch--left">🔥</span>
+    <span class="taberna__torch taberna__torch--right">🔥</span>
+    <span class="taberna__barrel taberna__barrel--1">🛢️</span>
+    <span class="taberna__barrel taberna__barrel--2">🛢️</span>
+    <span class="taberna__barrel taberna__barrel--3">🛢️</span>
+  </div>
+
+  <header class="taberna__signboard">
+    <h1 id="taberna-title" class="taberna__title">Taberna</h1>
+    <p class="taberna__subtitle">Converse com os moradores e aceite missões</p>
+  </header>
+
+  <div class="taberna__characters" aria-label="Moradores da taberna">
+    @for (npc of npcs; track npc.id) {
+      <div class="taberna__character-wrapper taberna__cell">
+        <button
+          type="button"
+          class="taberna__character-btn sheet"
+          (click)="openDialog(npc)"
+          [attr.aria-label]="'Conversar com ' + npc.name"
+        >
+          <app-character
+            [appearance]="npc.appearance"
+            [name]="npc.name"
+            [isSelected]="selectedNpc()?.id === npc.id"
+            [showName]="false"
+          />
+        </button>
+
+        <div class="taberna__character-name" [title]="npc.name">{{ npc.name }}</div>
+
+        <div class="taberna__friendship-bar" role="img" [attr.aria-label]="'Amizade ' + levelOf(npc.id) + ' de ' + 6">
+          <div class="taberna__friendship-fill" [style.width.%]="friendshipPct(npc.id)"></div>
+          <span class="taberna__friendship-label">Amizade {{ levelOf(npc.id) }}</span>
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (feedback()) {
+    <p class="taberna__feedback" role="status">{{ feedback() }}</p>
+  }
+
+  @if (selectedNpc()) {
+    <div class="taberna__dialog-overlay" (click)="onClose()">
+      <app-npc-dialog
+        class="taberna__dialog"
+        [mode]="'suggest'"
+        [npc]="selectedNpc()!"
+        (accept)="onAccept($event)"
+        (close)="onClose()"
+        (click)="$event.stopPropagation()"
+      />
+    </div>
+  }
+</section>

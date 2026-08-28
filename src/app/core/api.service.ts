@@ -68,6 +68,11 @@ export class ApiService {
       title: string;
       difficulty: Difficulty;
       dueDate?: string | null;
+      source?: 'manual' | 'npc';
+      npcId?: string | null;
+      npcName?: string | null;
+      npcAvatar?: string | null;
+      templateId?: string | null;
     } = {
       title: mission.title,
       difficulty: mission.difficulty,
@@ -78,6 +83,11 @@ export class ApiService {
     if (mission.dueDate !== undefined) {
       body.dueDate = mission.dueDate;
     }
+    if (mission.source !== undefined) body.source = mission.source;
+    if (mission.npcId !== undefined) body.npcId = mission.npcId;
+    if (mission.npcName !== undefined) body.npcName = mission.npcName;
+    if (mission.npcAvatar !== undefined) body.npcAvatar = mission.npcAvatar;
+    if (mission.templateId !== undefined) body.templateId = mission.templateId;
     return this.http
       .post<Mission>(url, body)
       .pipe(catchError((err) => this.handleError(err)));
@@ -117,6 +127,22 @@ export class ApiService {
     const url = `${environment.apiUrl}/api/settings`;
     return this.http
       .put<void>(url, settings)
+      .pipe(catchError((err) => this.handleError(err)));
+  }
+
+  // --- NPC Friendship ---
+
+  getNpcFriendship(): Observable<Record<string, { completedCount: number; level: number }>> {
+    const url = `${environment.apiUrl}/api/npc-friendship`;
+    return this.http
+      .get<Record<string, { completedCount: number; level: number }>>(url)
+      .pipe(catchError((err) => this.handleError(err)));
+  }
+
+  putNpcFriendship(map: Record<string, { completedCount: number; level: number }>): Observable<void> {
+    const url = `${environment.apiUrl}/api/npc-friendship`;
+    return this.http
+      .put<void>(url, { friendship: map })
       .pipe(catchError((err) => this.handleError(err)));
   }
 

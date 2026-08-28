@@ -73,6 +73,11 @@ export class MissionsController {
       dueDate: dto.dueDate ?? null,
       completed: false,
       completedAt: null,
+      source: dto.source,
+      npcId: dto.npcId,
+      npcName: dto.npcName,
+      npcAvatar: dto.npcAvatar,
+      templateId: dto.templateId,
     };
     await this.missions.createMission(uuid, mission);
     return mission;
@@ -86,6 +91,9 @@ export class MissionsController {
   ): Promise<void> {
     const uuid = await this.resolveUuid(sub);
     const existing = await this.missions.getMission(uuid, id);
+    if (existing?.source === 'npc') {
+      throw new BadRequestException('cannot edit an npc mission');
+    }
     if (existing?.completed) {
       throw new BadRequestException('cannot edit a completed mission');
     }

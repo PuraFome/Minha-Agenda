@@ -66,6 +66,12 @@ CREATE TABLE IF NOT EXISTS missions (
   updated_at timestamptz DEFAULT now()
 );
 
+ALTER TABLE missions ADD COLUMN IF NOT EXISTS source text;
+ALTER TABLE missions ADD COLUMN IF NOT EXISTS npc_id text;
+ALTER TABLE missions ADD COLUMN IF NOT EXISTS npc_name text;
+ALTER TABLE missions ADD COLUMN IF NOT EXISTS npc_avatar text;
+ALTER TABLE missions ADD COLUMN IF NOT EXISTS template_id text;
+
 CREATE TABLE IF NOT EXISTS user_settings (
   user_id uuid PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
   retention_days int NOT NULL DEFAULT 0 CHECK (retention_days >= 0),
@@ -75,3 +81,11 @@ CREATE TABLE IF NOT EXISTS user_settings (
 
 CREATE INDEX IF NOT EXISTS idx_missions_user_id ON missions(user_id);
 CREATE INDEX IF NOT EXISTS idx_missions_user_completed ON missions(user_id, completed);
+
+CREATE TABLE IF NOT EXISTS npc_friendship (
+  user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  npc_id text NOT NULL,
+  completed_count int NOT NULL DEFAULT 0 CHECK (completed_count >= 0),
+  updated_at timestamptz DEFAULT now(),
+  PRIMARY KEY (user_id, npc_id)
+);

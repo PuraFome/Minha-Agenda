@@ -16,12 +16,13 @@
     <label for="task-difficulty" class="task-form__label">Dificuldade</label>
     <select
       id="task-difficulty"
-      [(ngModel)]="difficulty"
+      [value]="difficulty()"
+      (change)="onDifficultyChange($event)"
       name="difficulty"
       class="task-form__select"
     >
       @for (diff of difficulties; track diff) {
-        <option [ngValue]="diff">
+        <option [value]="diff">
           {{ difficultyLabels[diff] }} (+{{ xpTable[diff] }} XP)
         </option>
       }

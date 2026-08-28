@@ -15,6 +15,11 @@ export interface Mission {
   dueDate?: string | null;
   completed: boolean;
   completedAt?: string | null;
+  source?: 'manual' | 'npc';
+  npcId?: string | null;
+  npcName?: string | null;
+  npcAvatar?: string | null;
+  templateId?: string | null;
 }
 
 export const XP_TABLE: Record<Difficulty, number> = {

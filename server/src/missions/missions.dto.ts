@@ -31,6 +31,26 @@ export class CreateMissionDto {
 
   @IsOptional()
   dueDate?: string | null;
+
+  @IsOptional()
+  @IsIn(['manual', 'npc'])
+  source?: 'manual' | 'npc';
+
+  @IsOptional()
+  @IsString()
+  npcId?: string;
+
+  @IsOptional()
+  @IsString()
+  npcName?: string;
+
+  @IsOptional()
+  @IsString()
+  npcAvatar?: string;
+
+  @IsOptional()
+  @IsString()
+  templateId?: string;
 }
 
 /**

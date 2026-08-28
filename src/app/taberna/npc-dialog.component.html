@@ -1,0 +1,160 @@
+<div
+  class="dialog"
+  [class.dialog--congrats]="mode() === 'congrats'"
+  role="dialog"
+  [attr.aria-label]="npc().name + ' — diálogo da taberna'"
+>
+  <div class="dialog__header">
+    <app-character
+      [appearance]="npc().appearance"
+      [name]="npc().name"
+      [isSelected]="true"
+      [showName]="false"
+    />
+  </div>
+
+  <div class="dialog__body" (click)="skipTypewriter()">
+    @if (mode() === 'suggest') {
+      <div class="speech-bubble">
+        <div class="speech-bubble__name">{{ npc().name }}</div>
+        <p class="speech-bubble__text">
+          {{ displayedText() }}<span class="cursor" [class.cursor--visible]="isTyping()">|</span>
+        </p>
+      </div>
+    } @else {
+      <div class="speech-bubble speech-bubble--praise">
+        <div class="speech-bubble__name">{{ npc().name }}</div>
+        <p class="speech-bubble__text">{{ praiseLine() }}</p>
+      </div>
+    }
+  </div>
+
+  @if (mode() === 'suggest') {
+    @if (showChoices() && currentNode()?.choices?.length && !atEnd()) {
+      <div class="choices" role="group" aria-label="Suas respostas">
+        @for (choice of currentNode()!.choices; track choice.nextNodeId) {
+          <button
+            type="button"
+            class="choice"
+            (click)="onChoice(choice.nextNodeId, choice.missionId)"
+          >
+            <span class="choice__arrow" aria-hidden="true">›</span>
+            <span class="choice__text">{{ choice.text }}</span>
+          </button>
+        }
+      </div>
+    }
+
+    @if (showChoices() && atEnd()) {
+      @if (!showAll()) {
+        @if (finalSuggestion(); as mission) {
+          <div class="suggestion" aria-live="polite">
+            <p class="suggestion__lead">…então leve esta missão com você:</p>
+            <div class="mission" [style.--mission-difficulty]="difficultyColors[mission.difficulty]">
+              <div class="mission__head">
+                <span class="mission__title">{{ mission.title }}</span>
+                <span class="badge" [style.background]="difficultyColors[mission.difficulty]">
+                  {{ difficultyLabel(mission.difficulty) }}
+                </span>
+              </div>
+              <div class="mission__prazo">{{ prazoLabel(mission.prazoDays) }}</div>
+              @if (suggestionAcceptedPending()) {
+                <button type="button" class="btn btn--accepted" disabled aria-label="Missão já aceita">
+                  Aceita
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  class="btn btn--accept"
+                  [attr.aria-label]="'Aceitar missão ' + mission.title"
+                  (click)="onAcceptMission(mission)"
+                >
+                  Aceitar missão
+                </button>
+              }
+            </div>
+            <button
+              type="button"
+              class="choice choice--more"
+              (click)="toggleAll()"
+            >
+              <span class="choice__arrow" aria-hidden="true">›</span>
+              <span class="choice__text">Ver todas as missões</span>
+            </button>
+          </div>
+        } @else {
+          <div class="suggestion">
+            <p class="suggestion__lead">
+              Conclua as missões dele para desbloquear novas tarefas.
+            </p>
+            <button type="button" class="choice choice--more" (click)="toggleAll()">
+              <span class="choice__arrow" aria-hidden="true">›</span>
+              <span class="choice__text">Ver missões</span>
+            </button>
+          </div>
+        }
+      } @else {
+        <ul class="missions" aria-label="Missões oferecidas por {{ npc().name }}">
+          @for (card of cards(); track card.template.templateId) {
+            <li class="mission" [style.--mission-difficulty]="card.difficultyColor">
+              <div class="mission__head">
+                <span class="mission__title">{{ card.template.title }}</span>
+                <span class="badge" [style.background]="card.difficultyColor">
+                  {{ difficultyLabel(card.template.difficulty) }}
+                </span>
+              </div>
+              <div class="mission__prazo">{{ card.prazoLabel }}</div>
+
+              @if (card.unlocked && !card.acceptedPending) {
+                <button
+                  type="button"
+                  class="btn btn--accept"
+                  [attr.aria-label]="'Aceitar missão ' + card.template.title"
+                  (click)="onAcceptMission(card.template)"
+                >
+                  Aceitar
+                </button>
+              } @else if (!card.unlocked) {
+                <button type="button" class="btn btn--locked" disabled aria-label="Missão bloqueada">
+                  Bloqueado
+                </button>
+                <span class="mission__hint">Amizade {{ card.level }} para desbloquear</span>
+              } @else {
+                <button type="button" class="btn btn--accepted" disabled aria-label="Missão já aceita">
+                  Aceita
+                </button>
+              }
+            </li>
+          }
+        </ul>
+        <button type="button" class="choice choice--more" (click)="toggleAll()">
+          <span class="choice__arrow" aria-hidden="true">›</span>
+          <span class="choice__text">Voltar</span>
+        </button>
+      }
+    }
+  } @else {
+    <div class="choices" role="group" aria-label="Escolhas de conclusão">
+      <button
+        type="button"
+        class="btn btn--accept"
+        [attr.aria-label]="'Repetir missão amanhã'"
+        (click)="onRepeat()"
+      >
+        Repetir amanhã
+      </button>
+      <button
+        type="button"
+        class="btn btn--ghost"
+        [attr.aria-label]="'Não repetir agora'"
+        (click)="onClose()"
+      >
+        Agora não
+      </button>
+    </div>
+  }
+
+  <button type="button" class="dialog__close" (click)="onClose()" aria-label="Fechar diálogo">
+    ×
+  </button>
+</div>

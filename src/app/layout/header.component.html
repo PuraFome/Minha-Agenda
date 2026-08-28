@@ -6,8 +6,12 @@
 
   <nav class="nav" aria-label="Navegação principal">
     <a class="nav__link" routerLink="/" routerLinkActive="nav__link--active" [routerLinkActiveOptions]="{ exact: true }">Mural</a>
-    <a class="nav__link" routerLink="/nova-missao" routerLinkActive="nav__link--active">Nova Missão</a>
+    <a class="nav__link" routerLink="/nova-missao" routerLinkActive="nav__link--active">
+      <span class="nav__link-text nav__link-text--full">Nova Missão</span>
+      <span class="nav__link-text nav__link-text--short" aria-hidden="true">Nova</span>
+    </a>
     <a class="nav__link" routerLink="/perfil" routerLinkActive="nav__link--active">Perfil</a>
+    <a class="nav__link" routerLink="/taberna" routerLinkActive="nav__link--active">Taberna</a>
     </nav>
 
     @if (user(); as u) {

@@ -3,16 +3,21 @@ import { MissionService } from '../game/mission.service';
 import { SettingsService } from '../game/settings.service';
 import { MissionFormComponent } from './mission-form.component';
 import { Difficulty, Mission, XP_TABLE } from '../game/game.types';
+import { NpcDialogComponent } from '../taberna/npc-dialog.component';
+import { TabernaService } from '../taberna/taberna.service';
+import { NPCS } from '../taberna/taberna.data';
+import { Npc } from '../taberna/taberna.types';
 
 @Component({
   selector: 'app-mission-list',
-  imports: [MissionFormComponent],
+  imports: [MissionFormComponent, NpcDialogComponent],
   templateUrl: './mission-list.component.html',
   styleUrl: './mission-list.component.scss',
 })
 export class MissionListComponent {
   private readonly missionService = inject(MissionService);
   private readonly settingsService = inject(SettingsService);
+  private readonly tabernaService = inject(TabernaService);
 
   /** Seção a renderizar: pendentes, concluídas ou ambas. */
   readonly section = input<'pending' | 'completed' | 'all'>('all');
@@ -40,6 +45,8 @@ export class MissionListComponent {
   readonly showForm = signal(false);
   readonly editingMission = signal<Mission | null>(null);
 
+  readonly showNpcDialog = signal<{ npc: Npc; mission: Mission } | null>(null);
+
   startCreate(): void {
     this.editingMission.set(null);
     this.showForm.set(true);
@@ -57,6 +64,22 @@ export class MissionListComponent {
 
   completeMission(id: string): void {
     this.missionService.completeMission(id);
+    const m = this.missionService.tasks().find((t) => t.id === id);
+    if (m && m.source === 'npc' && m.npcId) {
+      this.tabernaService.recordCompletion(m.npcId);
+      const npc = NPCS.find((n) => n.id === m.npcId);
+      if (npc) {
+        this.showNpcDialog.set({ npc, mission: m });
+      }
+    }
+  }
+
+  onNpcRepeat(): void {
+    const dialog = this.showNpcDialog();
+    if (dialog) {
+      this.tabernaService.repeatMission(dialog.mission);
+      this.showNpcDialog.set(null);
+    }
   }
 
   undoCompleteMission(id: string): void {

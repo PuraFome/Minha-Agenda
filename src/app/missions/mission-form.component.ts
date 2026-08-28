@@ -37,6 +37,11 @@ export class MissionFormComponent {
   readonly trimmedTitle = computed(() => this.title().trim());
   readonly canSubmit = computed(() => this.trimmedTitle().length > 0);
 
+  onDifficultyChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value as Difficulty;
+    this.difficulty.set(value);
+  }
+
   constructor() {
     // Pré-preenche o formulário ao entrar em modo de edição; zera no modo de criação.
     effect(() => {

@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { SettingsModule } from './settings/settings.module';
 import { HeroModule } from './hero/hero.module';
 import { MissionsModule } from './missions/missions.module';
+import { NpcFriendshipModule } from './npc-friendship/npc-friendship.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { MissionsModule } from './missions/missions.module';
     SettingsModule,
     HeroModule,
     MissionsModule,
+    NpcFriendshipModule,
   ],
   controllers: [AppController],
   providers: [

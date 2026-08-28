@@ -1,0 +1,123 @@
+<div
+  class="character"
+  [class.character--selected]="isSelected()"
+  [style.--skin]="appearance().skinColor"
+  [style.--hair]="appearance().hairColor"
+  [style.--outfit]="appearance().outfitColor"
+  [style.--accent]="appearance().accentColor"
+>
+  @switch (appearance().kind) {
+    @case ('grandma') {
+      <svg class="character__art" viewBox="0 0 120 150" role="img" [attr.aria-label]="name()">
+        <path class="outfit outline" d="M60 86 C40 86 34 120 30 150 L90 150 C86 120 80 86 60 86 Z" />
+        <path class="accent" d="M48 92 L72 92 L76 132 L44 132 Z" opacity="0.92" />
+        <path class="skin outline" d="M36 96 C28 104 26 118 30 126 C34 122 38 112 40 104 Z" />
+        <path class="skin outline" d="M84 96 C92 104 94 118 90 126 C86 122 82 112 80 104 Z" />
+        <rect class="skin" x="52" y="74" width="16" height="14" rx="4" />
+        <ellipse class="skin outline" cx="60" cy="48" rx="30" ry="32" />
+        <circle class="skin outline" cx="30" cy="50" r="5" />
+        <circle class="skin outline" cx="90" cy="50" r="5" />
+        <path class="hair" d="M30 46 C26 18 94 18 90 46 C90 34 82 24 60 24 C38 24 30 34 30 46 Z" />
+        <circle class="hair" cx="60" cy="13" r="12" />
+        <circle class="outline" cx="48" cy="50" r="9" fill="none" />
+        <circle class="outline" cx="72" cy="50" r="9" fill="none" />
+        <line class="outline" x1="57" y1="50" x2="63" y2="50" />
+        <circle class="eye" cx="48" cy="50" r="3" />
+        <circle class="eye" cx="72" cy="50" r="3" />
+        <circle class="cheek" cx="40" cy="60" r="5" />
+        <circle class="cheek" cx="80" cy="60" r="5" />
+        <path class="outline" d="M50 64 Q60 74 70 64" fill="none" />
+      </svg>
+    }
+    @case ('soldier') {
+      <svg class="character__art" viewBox="0 0 120 150" role="img" [attr.aria-label]="name()">
+        <path class="outfit outline" d="M60 88 C42 88 36 120 32 150 L88 150 C84 120 78 88 60 88 Z" />
+        <path class="accent" d="M50 90 L60 103 L70 90 Z" />
+        <rect class="accent outline" x="30" y="90" width="14" height="9" rx="2" />
+        <rect class="accent outline" x="76" y="90" width="14" height="9" rx="2" />
+        <circle class="accent outline" cx="60" cy="120" r="6" />
+        <path class="outfit outline" d="M36 96 L30 126 L38 126 L42 100 Z" />
+        <path class="outfit outline" d="M84 96 L90 126 L82 126 L78 100 Z" />
+        <rect class="skin" x="52" y="74" width="16" height="14" rx="4" />
+        <ellipse class="skin outline" cx="60" cy="48" rx="30" ry="32" />
+        <circle class="skin outline" cx="30" cy="50" r="5" />
+        <circle class="skin outline" cx="90" cy="50" r="5" />
+        <path class="hair" d="M30 44 C30 22 90 22 90 44 C88 34 80 28 60 28 C40 28 32 34 30 44 Z" />
+        <path class="outfit outline" d="M28 30 C30 16 90 16 92 30 L92 34 L28 34 Z" />
+        <rect class="accent" x="28" y="31" width="64" height="5" />
+        <circle class="accent outline" cx="60" cy="23" r="5" />
+        <path class="outline" d="M42 44 L54 48" fill="none" />
+        <path class="outline" d="M78 44 L66 48" fill="none" />
+        <circle class="eye" cx="48" cy="52" r="3" />
+        <circle class="eye" cx="72" cy="52" r="3" />
+        <path class="outline" d="M52 66 L68 66" fill="none" />
+      </svg>
+    }
+    @case ('bard') {
+      <svg class="character__art" viewBox="0 0 120 150" role="img" [attr.aria-label]="name()">
+        <path class="outfit outline" d="M60 88 C40 88 34 120 30 150 L90 150 C86 120 80 88 60 88 Z" />
+        <path class="outfit outline" d="M36 96 L30 126 L40 126 L44 100 Z" />
+        <path class="outfit outline" d="M84 96 L90 126 L80 126 L76 100 Z" />
+        <path class="hair" d="M30 46 C24 70 26 110 34 132 L42 130 C36 108 36 78 40 56 Z" />
+        <path class="hair" d="M90 46 C96 70 94 110 86 132 L78 130 C84 108 84 78 80 56 Z" />
+        <rect class="skin" x="52" y="74" width="16" height="14" rx="4" />
+        <ellipse class="skin outline" cx="60" cy="50" rx="28" ry="30" />
+        <path class="outline" d="M44 50 q4 -4 8 0" fill="none" />
+        <path class="outline" d="M68 50 q4 -4 8 0" fill="none" />
+        <circle class="eye" cx="48" cy="52" r="2.6" />
+        <circle class="eye" cx="72" cy="52" r="2.6" />
+        <path class="outline" d="M54 64 Q62 68 70 62" fill="none" />
+        <ellipse class="outfit outline" cx="60" cy="30" rx="44" ry="9" />
+        <path class="outfit outline" d="M40 30 C40 14 80 14 80 30 Z" />
+        <rect class="accent" x="40" y="26" width="40" height="6" />
+        <circle class="accent" cx="86" cy="98" r="5" />
+        <rect class="accent" x="88" y="78" width="3" height="22" />
+      </svg>
+    }
+    @case ('monk') {
+      <svg class="character__art" viewBox="0 0 120 150" role="img" [attr.aria-label]="name()">
+        <path class="outfit outline" d="M60 86 C38 86 32 120 28 150 L92 150 C88 120 82 86 60 86 Z" />
+        <path class="outfit outline" d="M36 94 L30 128 L42 128 L46 98 Z" />
+        <path class="outfit outline" d="M84 94 L90 128 L78 128 L74 98 Z" />
+        <path class="accent outline" d="M44 92 Q60 104 76 92" fill="none" />
+        <circle class="accent" cx="44" cy="92" r="3" />
+        <circle class="accent" cx="60" cy="100" r="3" />
+        <circle class="accent" cx="76" cy="92" r="3" />
+        <rect class="skin" x="52" y="74" width="16" height="12" rx="4" />
+        <ellipse class="skin outline" cx="60" cy="50" rx="30" ry="32" />
+        <path class="outline" d="M42 50 q6 4 12 0" fill="none" />
+        <path class="outline" d="M66 50 q6 4 12 0" fill="none" />
+        <path class="outline" d="M52 64 Q60 70 68 64" fill="none" />
+        <circle class="accent" cx="60" cy="37" r="3" />
+      </svg>
+    }
+    @case ('baron') {
+      <svg class="character__art" viewBox="0 0 120 150" role="img" [attr.aria-label]="name()">
+        <path class="outfit outline" d="M60 88 C40 88 34 120 30 150 L90 150 C86 120 80 88 60 88 Z" />
+        <path class="accent" d="M50 90 L60 110 L52 122 Z" />
+        <path class="accent" d="M70 90 L60 110 L68 122 Z" />
+        <path class="outfit outline" d="M36 96 L30 126 L40 126 L44 100 Z" />
+        <path class="outfit outline" d="M84 96 L90 126 L80 126 L76 100 Z" />
+        <circle class="accent outline" cx="80" cy="122" r="6" />
+        <rect class="skin" x="52" y="74" width="16" height="14" rx="4" />
+        <ellipse class="skin outline" cx="60" cy="48" rx="30" ry="32" />
+        <circle class="skin outline" cx="30" cy="50" r="5" />
+        <circle class="skin outline" cx="90" cy="50" r="5" />
+        <path class="hair" d="M30 44 C30 24 90 24 90 44 C88 34 80 28 60 28 C40 28 32 34 30 44 Z" />
+        <rect class="outfit outline" x="38" y="6" width="44" height="22" rx="3" />
+        <rect class="outfit outline" x="28" y="28" width="64" height="7" rx="3" />
+        <rect class="accent" x="38" y="22" width="44" height="5" />
+        <circle class="outline" cx="72" cy="50" r="10" fill="none" />
+        <line class="outline" x1="72" y1="60" x2="72" y2="74" />
+        <circle class="eye" cx="48" cy="50" r="3.5" />
+        <circle class="eye" cx="72" cy="50" r="3.5" />
+        <path class="outline" d="M48 62 Q60 76 72 62" fill="none" />
+        <circle class="cheek" cx="40" cy="58" r="5" />
+        <circle class="cheek" cx="80" cy="58" r="5" />
+      </svg>
+    }
+  }
+  @if (showName()) {
+    <div class="character__name">{{ name() }}</div>
+  }
+</div>

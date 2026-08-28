@@ -1,0 +1,252 @@
+:host {
+  display: block;
+  --taberna-ember: var(--color-primary);
+}
+
+.taberna {
+  position: relative;
+  min-height: 100%;
+  padding: var(--space-7) var(--space-5) var(--space-8);
+  color: var(--mural-text, var(--color-text));
+  background-color: var(--mural-bg);
+  background-image: var(--torch-glow), var(--wood-grain);
+  overflow: hidden;
+}
+
+.taberna__backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.taberna__torch {
+  position: absolute;
+  top: 8%;
+  font-size: 2.4rem;
+  filter: drop-shadow(0 0 12px var(--torch-glow));
+  animation: torch-flicker 1.6s ease-in-out infinite;
+}
+
+.taberna__torch--left {
+  left: 4%;
+}
+
+.taberna__torch--right {
+  right: 4%;
+  animation-delay: 0.8s;
+}
+
+.taberna__barrel {
+  position: absolute;
+  bottom: 4%;
+  font-size: 2rem;
+  opacity: 0.85;
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.4));
+}
+
+.taberna__barrel--1 {
+  left: 6%;
+}
+
+.taberna__barrel--2 {
+  right: 8%;
+}
+
+.taberna__barrel--3 {
+  right: 18%;
+  font-size: 1.6rem;
+  opacity: 0.7;
+}
+
+@keyframes torch-flicker {
+  0%,
+  100% {
+    opacity: 0.82;
+    transform: scale(1) rotate(-1deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08) rotate(1deg);
+  }
+}
+
+.taberna__signboard {
+  position: relative;
+  z-index: 1;
+  margin: 0 auto var(--space-7);
+  max-width: 720px;
+  text-align: center;
+  padding: var(--space-5) var(--space-6);
+  border-radius: var(--radius-lg);
+  background-color: var(--wood-2);
+  background-image: var(--wood-grain);
+  border: 4px solid var(--mural-card-border, var(--wood-1));
+  box-shadow: var(--shadow-lg), var(--ornate-ring);
+}
+
+.taberna__title {
+  font-family: var(--font-rpg, var(--font-display));
+  font-size: clamp(2.4rem, 6vw, 3.6rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--taberna-ember);
+  text-shadow: 0 2px 0 rgb(0 0 0 / 0.35);
+}
+
+.taberna__subtitle {
+  margin-top: var(--space-2);
+  font-family: var(--font-rpg, var(--font-display));
+  font-size: 1.05rem;
+  color: var(--mural-text, var(--color-text));
+  opacity: 0.9;
+}
+
+.taberna__characters {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.taberna__character-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 132px;
+}
+
+.taberna__character-btn {
+  display: grid;
+  place-items: center;
+  width: 124px;
+  height: 132px;
+  padding: var(--space-2);
+  cursor: pointer;
+  border: none;
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-md) var(--radius-md);
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgb(255 255 255 / 0.18), transparent 60%),
+    var(--mural-card-bg);
+  background-image: var(--parchment-bg);
+  border: 2px solid var(--mural-card-border, var(--wood-1));
+  border-top: 4px solid var(--taberna-ember);
+  box-shadow: var(--shadow-md), var(--ornate-ring);
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  app-character {
+    width: 92px;
+  }
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg), var(--ornate-ring);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 3px;
+  }
+}
+
+.taberna__character-name {
+  width: 100%;
+  max-width: 132px;
+  text-align: center;
+  font-family: var(--font-rpg, var(--font-display));
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--taberna-ember, var(--color-primary));
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.5);
+  /* Allow long names to break naturally instead of being cut off */
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+  hyphens: auto;
+}
+
+.taberna__friendship-bar {
+  position: relative;
+  width: 100px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-muted);
+  border: 2px solid var(--mural-card-border, var(--wood-1));
+  overflow: hidden;
+  box-shadow: var(--shadow-sm), var(--ornate-ring);
+}
+
+.taberna__friendship-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--color-primary) 65%, #000),
+    var(--color-primary)
+  );
+  box-shadow: 0 0 10px var(--torch-glow);
+}
+
+.taberna__friendship-label {
+  position: relative;
+  z-index: 1;
+  display: block;
+  font-family: var(--font-rpg, var(--font-display));
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 12px;
+  color: var(--color-primary-contrast);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.6);
+  text-align: center;
+}
+
+.taberna__feedback {
+  position: fixed;
+  top: var(--space-5);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  max-width: min(420px, calc(100% - 2 * var(--space-5)));
+  text-align: center;
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-rpg, var(--font-display));
+  font-weight: 700;
+  color: var(--color-primary-contrast);
+  background: var(--taberna-ember);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+
+.taberna__dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: var(--space-5);
+  background: rgb(0 0 0 / 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.taberna__dialog {
+  width: min(560px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .taberna__torch {
+    animation: none;
+  }
+  .taberna__character-btn {
+    transition: none;
+    &:hover {
+      transform: none;
+    }
+  }
+}

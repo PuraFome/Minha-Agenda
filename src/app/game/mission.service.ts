@@ -89,6 +89,34 @@ export class MissionService {
     this.api.createMission(mission).subscribe({ error: () => {} });
   }
 
+  /** Aceita uma missão enviada por um NPC, com id gerado via crypto.randomUUID(). */
+  acceptNpcMission(p: {
+    title: string;
+    difficulty: Difficulty;
+    dueDate: string | null;
+    npcId: string;
+    npcName: string;
+    npcAvatar: string;
+    templateId: string;
+  }): void {
+    const mission: Mission = {
+      id: crypto.randomUUID(),
+      title: p.title,
+      difficulty: p.difficulty,
+      dueDate: p.dueDate ?? undefined,
+      completed: false,
+      completedAt: null,
+      source: 'npc',
+      npcId: p.npcId,
+      npcName: p.npcName,
+      npcAvatar: p.npcAvatar,
+      templateId: p.templateId,
+    };
+    this.tasks.update((m) => [...m, mission]);
+    this.persist();
+    this.api.createMission(mission).subscribe({ error: () => {} });
+  }
+
   /** Edita título/dificuldade/data de uma missão pendente. Missões concluídas são ignoradas. */
   editMission(
     id: string,
@@ -96,6 +124,9 @@ export class MissionService {
   ): void {
     const target = this.tasks().find((mission) => mission.id === id && !mission.completed);
     if (!target) {
+      return;
+    }
+    if (target.source === 'npc') {
       return;
     }
     this.tasks.update((missions) =>

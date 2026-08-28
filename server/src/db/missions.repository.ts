@@ -18,6 +18,11 @@ export interface Mission {
   dueDate?: string | null;
   completed: boolean;
   completedAt?: string | null;
+  source?: 'manual' | 'npc';
+  npcId?: string | null;
+  npcName?: string | null;
+  npcAvatar?: string | null;
+  templateId?: string | null;
 }
 
 /**
@@ -36,6 +41,11 @@ interface MissionRow {
   due_date: string | Date | null;
   completed: boolean;
   completed_at: string | Date | null;
+  source: string | null;
+  npc_id: string | null;
+  npc_name: string | null;
+  npc_avatar: string | null;
+  template_id: string | null;
 }
 
 /** Fields a caller may patch on a mission (identifiers are literals below). */
@@ -76,6 +86,11 @@ export class MissionsRepository {
       dueDate,
       completed: row.completed,
       completedAt,
+      source: row.source == null ? undefined : (row.source as 'manual' | 'npc'),
+      npcId: row.npc_id == null ? undefined : row.npc_id,
+      npcName: row.npc_name == null ? undefined : row.npc_name,
+      npcAvatar: row.npc_avatar == null ? undefined : row.npc_avatar,
+      templateId: row.template_id == null ? undefined : row.template_id,
     };
   }
 
@@ -84,7 +99,7 @@ export class MissionsRepository {
    */
   async listMissions(userId: string): Promise<Mission[]> {
     const result: QueryResult<MissionRow> = await this.pool.query(
-      `SELECT id, user_id, title, difficulty, due_date, completed, completed_at
+      `SELECT id, user_id, title, difficulty, due_date, completed, completed_at, source, npc_id, npc_name, npc_avatar, template_id
        FROM missions WHERE user_id = $1 ORDER BY created_at ASC`,
       [userId],
     );
@@ -96,7 +111,7 @@ export class MissionsRepository {
    */
   async getMission(userId: string, id: string): Promise<Mission | null> {
     const result: QueryResult<MissionRow> = await this.pool.query(
-      `SELECT id, user_id, title, difficulty, due_date, completed, completed_at
+      `SELECT id, user_id, title, difficulty, due_date, completed, completed_at, source, npc_id, npc_name, npc_avatar, template_id
        FROM missions WHERE user_id = $1 AND id = $2`,
       [userId, id],
     );
@@ -112,8 +127,8 @@ export class MissionsRepository {
     await runTxn(this.pool, async (client: PoolClient) => {
       await client.query(
         `INSERT INTO missions
-           (id, user_id, title, difficulty, due_date, completed, completed_at, updated_at)
-         VALUES ($1, $2, $3, $4, $5::date, $6, $7::timestamptz, now())`,
+           (id, user_id, title, difficulty, due_date, completed, completed_at, source, npc_id, npc_name, npc_avatar, template_id, updated_at)
+         VALUES ($1, $2, $3, $4, $5::date, $6, $7::timestamptz, $8, $9, $10, $11, $12, now())`,
         [
           mission.id,
           userId,
@@ -122,6 +137,11 @@ export class MissionsRepository {
           mission.dueDate ?? null,
           mission.completed,
           mission.completedAt ?? null,
+          mission.source ?? null,
+          mission.npcId ?? null,
+          mission.npcName ?? null,
+          mission.npcAvatar ?? null,
+          mission.templateId ?? null,
         ],
       );
     });

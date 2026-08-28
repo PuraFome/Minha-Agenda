@@ -57,8 +57,15 @@
   gap: var(--space-1);
   margin-left: auto;
   margin-right: var(--space-3);
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  &::-webkit-scrollbar {
+    display: none; /* Chrome / Safari */
+  }
 
   &__link {
+    flex-shrink: 0;
+    white-space: nowrap;
     padding: var(--space-2) var(--space-3);
     border-radius: var(--radius-md);
     color: var(--color-text-muted);
@@ -128,6 +135,56 @@
 
   &:hover {
     background: var(--color-primary-hover);
+  }
+}
+
+// ---- Responsive ----
+.nav__link-text--short {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .header {
+    padding: var(--space-2) var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .brand__name {
+    // Hide the brand text on mobile — the MA mark is enough.
+    display: none;
+  }
+
+  .nav {
+    margin-right: 0;
+    gap: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+
+    &__link {
+      padding: var(--space-1) var(--space-2);
+      font-size: 0.78rem;
+      flex-shrink: 0;
+    }
+
+    &__link-text--full {
+      display: none;
+    }
+
+    &__link-text--short {
+      display: inline;
+    }
+  }
+
+  .theme-toggle {
+    width: 2.25rem;
+    height: 2.25rem;
+    flex-shrink: 0;
+  }
+
+  .avatar {
+    width: 2.25rem;
+    height: 2.25rem;
+    flex-shrink: 0;
   }
 }
 

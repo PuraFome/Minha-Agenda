@@ -184,6 +184,11 @@ describe('MissionsRepository', () => {
       null,
       false,
       null,
+      null,
+      null,
+      null,
+      null,
+      null,
     ]);
     // The injection-looking title is bound, never concatenated into SQL text.
     expect(sql).not.toContain(EVIL_TITLE);

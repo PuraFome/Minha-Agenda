@@ -5,7 +5,8 @@ import { MissionFormComponent } from './mission-form.component';
 import { MissionService, PendingMissionRow } from '../game/mission.service';
 import { SettingsService } from '../game/settings.service';
 import { Mission } from '../game/game.types';
-import { signal } from '@angular/core';
+import { TabernaService } from '../taberna/taberna.service';
+import { signal, Signal } from '@angular/core';
 import { vi } from 'vitest';
 
 describe('MissionListComponent', () => {
@@ -19,6 +20,14 @@ describe('MissionListComponent', () => {
     deleteMission: ReturnType<typeof vi.fn>;
     pendingTasks: ReturnType<typeof signal>;
     completedTasks: ReturnType<typeof signal>;
+    tasks: Signal<Mission[]>;
+  };
+  let tabernaServiceSpy: {
+    recordCompletion: ReturnType<typeof vi.fn>;
+    repeatMission: ReturnType<typeof vi.fn>;
+    levelOf: ReturnType<typeof vi.fn>;
+    isUnlocked: ReturnType<typeof vi.fn>;
+    isAcceptedPending: ReturnType<typeof vi.fn>;
   };
   let settingsServiceSpy: {
     retentionDays: ReturnType<typeof signal>;
@@ -80,6 +89,14 @@ describe('MissionListComponent', () => {
       deleteMission: vi.fn(),
       pendingTasks: signal(pendingRows),
       completedTasks: signal(completedTasks),
+      tasks: signal<Mission[]>([...pendingRows.map((r) => r.task), ...completedTasks]),
+    };
+    tabernaServiceSpy = {
+      recordCompletion: vi.fn(),
+      repeatMission: vi.fn(),
+      levelOf: vi.fn(() => 0),
+      isUnlocked: vi.fn(() => true),
+      isAcceptedPending: vi.fn(() => false),
     };
     settingsServiceSpy = {
       retentionDays: signal(0),
@@ -89,6 +106,7 @@ describe('MissionListComponent', () => {
       imports: [MissionListComponent],
       providers: [
         { provide: MissionService, useValue: missionServiceSpy },
+        { provide: TabernaService, useValue: tabernaServiceSpy },
         { provide: SettingsService, useValue: settingsServiceSpy },
       ],
     }).compileComponents();
@@ -189,7 +207,7 @@ describe('MissionListComponent', () => {
   });
 
   it('should show empty state when no pending tasks', () => {
-    missionServiceSpy.pendingTasks = signal([]);
+    missionServiceSpy.pendingTasks.set([]);
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
@@ -199,12 +217,12 @@ describe('MissionListComponent', () => {
   });
 
   it('should show empty state when no completed tasks', () => {
-    missionServiceSpy.completedTasks = signal([]);
+    missionServiceSpy.completedTasks.set([]);
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
     const empties = compiled.querySelectorAll('.mission-list__empty');
-    expect(empties.length).toBe(2);
+    expect(empties.length).toBe(1);
   });
 
   it('should render only pending section when section input is pending', () => {
@@ -289,5 +307,68 @@ describe('MissionListComponent', () => {
 
     expect(component.showForm()).toBe(false);
     expect(component.editingMission()).toBe(null);
+  });
+
+  describe('NPC integration', () => {
+    const npcMission: Mission = {
+      id: 'pnpc',
+      title: 'NPC mission',
+      difficulty: 'facil',
+      dueDate: null,
+      completed: false,
+      completedAt: null,
+      source: 'npc',
+      npcId: 'dona-arruma',
+      npcName: 'Dona Arruma',
+      npcAvatar: '🧹',
+    };
+
+    it('should render npc badge for a pending npc mission', () => {
+      missionServiceSpy.pendingTasks.set([{ task: npcMission, overdue: false }]);
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const badge = compiled.querySelector('.mission-list__npc-badge');
+      expect(badge).toBeTruthy();
+      expect(badge?.textContent).toContain('🧹');
+      expect(badge?.textContent).toContain('Dona Arruma');
+    });
+
+    it('should not render edit button for an npc mission', () => {
+      missionServiceSpy.pendingTasks.set([{ task: npcMission, overdue: false }]);
+      fixture.detectChanges();
+
+      const compiled = fixture.nativeElement as HTMLElement;
+      const items = compiled.querySelectorAll('.mission-list__item');
+      expect(items[0].querySelectorAll('.mission-list__action-btn--edit').length).toBe(0);
+    });
+
+    it('should record npc completion and open congrats dialog on completeMission for npc mission', () => {
+      missionServiceSpy.tasks = signal([npcMission]);
+      fixture.detectChanges();
+
+      component.completeMission('pnpc');
+
+      expect(missionServiceSpy.completeMission).toHaveBeenCalledWith('pnpc');
+      expect(tabernaServiceSpy.recordCompletion).toHaveBeenCalledWith('dona-arruma');
+      expect(component.showNpcDialog()?.npc.id).toBe('dona-arruma');
+      expect(component.showNpcDialog()?.mission.id).toBe('pnpc');
+
+      fixture.detectChanges();
+      const compiled = fixture.nativeElement as HTMLElement;
+      expect(compiled.querySelector('app-npc-dialog')).toBeTruthy();
+    });
+
+    it('should call repeatMission and clear dialog on onNpcRepeat', () => {
+      missionServiceSpy.tasks = signal([npcMission]);
+      fixture.detectChanges();
+      component.completeMission('pnpc');
+      expect(component.showNpcDialog()).not.toBeNull();
+
+      component.onNpcRepeat();
+
+      expect(tabernaServiceSpy.repeatMission).toHaveBeenCalledWith(npcMission);
+      expect(component.showNpcDialog()).toBeNull();
+    });
   });
 });

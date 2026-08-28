@@ -30,10 +30,27 @@ const missionStore = new Map<string, Mission>();
 const missionsRepo: Partial<MissionsRepository> = {
   listMissions: async (): Promise<Mission[]> => [...missionStore.values()],
   createMission: async (_userId: string, mission: Mission): Promise<void> => {
-    missionStore.set(mission.id, { ...mission });
+    missionStore.set(mission.id, {
+      ...mission,
+      source: mission.source,
+      npcId: mission.npcId,
+      npcName: mission.npcName,
+      npcAvatar: mission.npcAvatar,
+      templateId: mission.templateId,
+    });
   },
-  getMission: async (_userId: string, id: string): Promise<Mission | null> =>
-    missionStore.get(id) ?? null,
+  getMission: async (_userId: string, id: string): Promise<Mission | null> => {
+    const m = missionStore.get(id);
+    if (!m) return null;
+    return {
+      ...m,
+      source: m.source,
+      npcId: m.npcId,
+      npcName: m.npcName,
+      npcAvatar: m.npcAvatar,
+      templateId: m.templateId,
+    };
+  },
   updateMission: async (
     _userId: string,
     id: string,
@@ -237,5 +254,73 @@ describe('MissionsController (GET/POST/PUT/PATCH/DELETE /api/missions)', () => {
   it('GET /api/missions is rejected (403) when no bearer token is present', async () => {
     const res = await request(app.getHttpServer()).get('/api/missions');
     expect(res.status).toBe(403);
+  }, 120000);
+
+  it('POST /api/missions with npc fields round-trips them (201)', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/missions').set(BEARER)
+      .send({
+        id: '99999999-9999-9999-9999-999999999999',
+        title: 't',
+        difficulty: 'facil',
+        source: 'npc',
+        npcId: 'x',
+        npcName: 'N',
+        npcAvatar: '🧹',
+        templateId: 't1',
+      });
+    expect(res.status).toBe(201);
+    expect(res.body.source).toBe('npc');
+    expect(res.body.npcId).toBe('x');
+    expect(res.body.npcName).toBe('N');
+    expect(res.body.npcAvatar).toBe('🧹');
+    expect(res.body.templateId).toBe('t1');
+  }, 120000);
+
+  it('GET /api/missions lists the created npc mission with its npc fields', async () => {
+    await request(app.getHttpServer())
+      .post('/api/missions').set(BEARER)
+      .send({
+        id: '88888888-8888-8888-8888-888888888888',
+        title: 't',
+        difficulty: 'facil',
+        source: 'npc',
+        npcId: 'x',
+        npcName: 'N',
+        npcAvatar: '🧹',
+        templateId: 't1',
+      });
+    const res = await request(app.getHttpServer()).get('/api/missions').set(BEARER);
+    expect(res.status).toBe(200);
+    const npcMission = res.body.find(
+      (m: { id: string }) => m.id === '88888888-8888-8888-8888-888888888888',
+    );
+    expect(npcMission).toBeDefined();
+    expect(npcMission.source).toBe('npc');
+    expect(npcMission.npcId).toBe('x');
+    expect(npcMission.npcName).toBe('N');
+    expect(npcMission.npcAvatar).toBe('🧹');
+    expect(npcMission.templateId).toBe('t1');
+  }, 120000);
+
+  it('PUT /api/missions/:id on an npc-source mission returns 400', async () => {
+    await request(app.getHttpServer())
+      .post('/api/missions').set(BEARER)
+      .send({
+        id: '77777777-7777-7777-7777-777777777777',
+        title: 't',
+        difficulty: 'facil',
+        source: 'npc',
+        npcId: 'x',
+        npcName: 'N',
+        npcAvatar: '🧹',
+        templateId: 't1',
+      });
+
+    const res = await request(app.getHttpServer())
+      .put('/api/missions/77777777-7777-7777-7777-777777777777').set(BEARER)
+      .send({ title: 'Renamed' });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('cannot edit an npc mission');
   }, 120000);
 });
